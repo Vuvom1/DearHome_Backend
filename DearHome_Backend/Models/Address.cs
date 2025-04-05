@@ -1,7 +1,7 @@
 using System;
 using DearHome_Backend.Models;
 
-namespace DearHome_Backend.Constants;
+namespace DearHome_Backend.Modals;
 
 public class Address : BaseEntity
 {
