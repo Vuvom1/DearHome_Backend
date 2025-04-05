@@ -1,0 +1,72 @@
+# Build Folders
+bin/
+obj/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+
+# Visual Studio Code
+.vscode/
+
+# ASP.NET
+appsettings*.json
+
+# Rider
+.idea/
+
+# Packages
+*.nupkg
+*.snupkg
+
+# Backup & temporary files
+*.bak
+*.swp
+*.tmp
+*.temp
+~$*
+
+# DotNet specific
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Azure Functions
+local.settings.json
+
+# Entity Framework
+Migrations/
+
+# Coverage Reports
+coverage/
+*.coverage
+*.coveragexml
+*.codecov
+
+# NUnit
+TestResult.xml
+TestResult-*.xml
+
+# StyleCop
+StyleCopReport.xml
+
+# File-based secrets
+secrets.json
+
+# Others
+*.DS_Store
+Thumbs.db
