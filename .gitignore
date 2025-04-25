@@ -17,6 +17,7 @@ obj/
 
 # ASP.NET
 appsettings*.json
+Credentials/*
 
 # Rider
 .idea/
@@ -70,3 +71,4 @@ secrets.json
 # Others
 *.DS_Store
 Thumbs.db
+DearHome_Backend/Credentials/makemyhome-27df4-firebase-adminsdk-hsal7-09e697d0ff.json

@@ -1,19 +1,19 @@
 using System;
 using DearHome_Backend.Constants;
+using DearHome_Backend.Modals;
+using Microsoft.AspNetCore.Identity;
 
 namespace DearHome_Backend.Models;
 
-public class User : BaseEntity
+public class User : IdentityUser<Guid>
 {
     public string? ImageUrl { get; set; }
     public required string Name { get; set; }
-    public required string Username { get; set; }
-    public required string Password { get; set; }
-    public required string Email { get; set; }
-    public required string PhoneNumber { get; set; }
-    public DateTime DateOfBirth { get; set; }
-    public bool IsAdmin { get; set; } = false;
+    public DateTime? DateOfBirth { get; set; }
     public bool IsActive { get; set; } = true;
     public int CustomerPoints { get; set; } = 0;
     public CustomerLevels CustomerLevel { get; set; } = CustomerLevels.Bronze;
+    public virtual ICollection<Address>? Addresses { get; set; }
+    public virtual ICollection<Payment>? Payments { get; set; }
+    public virtual ICollection<Order>? Orders { get; set; }
 }

@@ -15,5 +15,6 @@ public class Promotion : BaseEntity
     public int PromotionType {get; set;} // 0: CustomerLevel, 5: Order
     public CustomerLevels CustomerLevel {get; set;} // 0: Bronze, 1: Silver, 2: Gold, 3: Platinum
     public int MaximumUsage {get; set;} = 1; // Maximum usage for each user
+    public virtual ICollection<Order>? Orders {get; set;} // Orders that used this promotion
 
 }

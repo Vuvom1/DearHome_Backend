@@ -1,0 +1,85 @@
+using AutoMapper;
+using DearHome_Backend.DTOs.UserDtos;
+using DearHome_Backend.Models;
+using DearHome_Backend.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace DearHome_Backend.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class UserController : ControllerBase
+    {
+        private readonly IUserService _userService;
+        private readonly IMapper _mapper;
+
+        public UserController(IUserService userService, IMapper mapper)
+        {
+            _userService = userService;
+            _mapper = mapper;
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUser(Guid id)
+        {
+            var user = await _userService.GetUserAsync(id);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+            return Ok(user);
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] UserLoginDto userLoginDto)
+        {
+                var token = await _userService.LoginAsync(userLoginDto.UserName, userLoginDto.Password);
+                return Ok(token);
+        }
+
+        [HttpPost("login-google")]
+        public async Task<IActionResult> LoginWithGoogle([FromBody] GoogleLoginDto googleLoginDto)
+        {
+            var accessToken = googleLoginDto.AccessToken;
+            
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return BadRequest("Access token is required."); 
+            }
+
+            var token = await _userService.LoginWithGoogleAsync(accessToken);
+            return Ok(token);
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] UserRegisterDto userRegisterDto)
+        {
+                var user = _mapper.Map<User>(userRegisterDto);
+                await _userService.RegisterAsync(user, userRegisterDto.Password, userRegisterDto.VerificationCode);
+                return Ok("User registered successfully."); 
+        }
+
+        [HttpPost("send-verification-code")]
+        public async Task<IActionResult> SendVerificationCode([FromBody] VerificationCodeDto verificationCodeDto)
+        {
+            if (string.IsNullOrEmpty(verificationCodeDto.Email))
+            {
+                return BadRequest("Email and verification code are required.");
+            }
+
+            await _userService.SendVerificationCodeAsync(verificationCodeDto.Email);
+
+            return Ok("Verification code sent successfully.");
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto updateUserDto)
+        {
+            var user = _mapper.Map<User>(updateUserDto);
+            await _userService.UpdateAsync(user);
+            
+            return Ok();
+        }
+    }
+}

@@ -11,5 +11,8 @@ public class Variant : BaseEntity
     public required string Sku { get; set; }
     public Guid ProductId { get; set; }
     public virtual Product? Product { get; set; }
-    public virtual List<AttributeValue>? AttributeValues { get; set; } = new List<AttributeValue>();
+    public virtual ICollection<VariantAttribute>? VariantAttributes { get; set; } = new List<VariantAttribute>();
+    public virtual ICollection<Review>? Reviews { get; set; } = new List<Review>();
+    public virtual ICollection<GoodReceivedNote>? GoodReceivedNotes { get; set; } = new List<GoodReceivedNote>();
+    
 }

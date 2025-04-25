@@ -25,4 +25,5 @@ public class Order : BaseEntity
     public string? PaymentMethod { get; set; }
     public Guid? PaymentId { get; set; }
     public virtual Payment? Payment { get; set; }
+    
 }

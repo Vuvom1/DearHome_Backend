@@ -1,14 +1,13 @@
 using System;
+using DearHome_Backend.Constants;
 using DearHome_Backend.Models;
 
-namespace DearHome_Backend.Constants;
+namespace DearHome_Backend.Models;
 
 public class Attribute : BaseEntity
 {
     public required string Name { get; set; }
-    public required Type Type { get; set; }
-    public bool IsRequired { get; set; } = true;
-    public bool IsActive { get; set; } = true;
-    public Guid CategoryId { get; set; }
-    public virtual Category? Category { get; set; }
+    public required AttributeType Type { get; set; }
+    public virtual ICollection<CategoryAttribute>? CategoryAttributes { get; set; } = new List<CategoryAttribute>();
+    public virtual ICollection<AttributeValue>? AttributeValues { get; set; } = new List<AttributeValue>();
 }

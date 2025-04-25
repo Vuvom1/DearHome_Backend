@@ -1,0 +1,72 @@
+using System;
+using DearHome_Backend.Data;
+using DearHome_Backend.Models;
+using DearHome_Backend.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace DearHome_Backend.Repositories.Implementations;
+
+public class CategoryRepository : BaseRepository<Category>, ICategoryRepository
+{
+    private new readonly DearHomeContext _context;
+
+    public CategoryRepository(DearHomeContext context) : base(context)
+    {
+        _context = context;
+    }
+
+    public Task<Category> GetCategoryByName(string name)
+    {
+        var categoryTask = _context.Categories.FirstOrDefaultAsync(c => c.Name == name);
+        return categoryTask.ContinueWith(task =>
+        {
+            var category = task.Result;
+            if (category == null)
+            {
+                throw new InvalidOperationException($"Category with name '{name}' not found.");
+            }
+            return category;
+        });
+    }
+
+    public Task<List<Category>> GetCategoriesByParentId(Guid parentId)
+    {
+        return _context.Categories.Where(c => c.ParentCategoryId == parentId).ToListAsync();
+    }
+
+    public Task<List<Category>> GetAllWithParentAndAttributes()
+    {
+        return _context.Categories
+            .Include(c => c.ParentCategory)
+            .Include(c => c.CategoryAttributes!)
+                .ThenInclude(ca => ca.Attribute!)
+            .ToListAsync();
+    }
+
+    public Task<List<Category>> GetAllWithAttributesAndAttributeValues()
+    {
+        return _context.Categories
+            .Include(c => c.CategoryAttributes!)
+                .ThenInclude(ca => ca.Attribute!)
+                .ThenInclude(a => a.AttributeValues!)
+            .Include(c => c.CategoryAttributes!)
+            .ToListAsync();
+    }
+
+    public async Task<Category> GetCategoryBySlug(string slug)
+    {
+        var category = await _context.Categories
+            .Include(c => c.ParentCategory)
+            .Include(c=>c.SubCategories)
+            .Include(c => c.CategoryAttributes!)
+                .ThenInclude(ca => ca.Attribute!)
+            .FirstOrDefaultAsync(c => c.Slug == slug);
+    
+        if (category == null)
+        {
+            throw new InvalidOperationException($"Category with slug '{slug}' not found.");
+        }
+    
+        return category;
+    }
+}

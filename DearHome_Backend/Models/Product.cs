@@ -15,4 +15,6 @@ public class Product : BaseEntity
     public virtual Category? Category { get; set; }
     public virtual Placement? Placement { get; set; }
     public virtual string Status { get; set; } = "Available";
+    public virtual List<Variant>? Variants { get; set; } = new List<Variant>();
+    public virtual ICollection<AttributeValue>? AttributeValues { get; set; } = new List<AttributeValue>();
 }

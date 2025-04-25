@@ -1,0 +1,55 @@
+using System;
+using DearHome_Backend.Data;
+using DearHome_Backend.Models;
+using DearHome_Backend.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace DearHome_Backend.Repositories.Implementations;
+
+public class VariantRepository : BaseRepository<Variant>, IVariantRepository
+{
+    private readonly DearHomeContext _context;
+    public VariantRepository(DearHomeContext context) : base(context)
+    {
+        _context = context;
+    }
+
+    public Task<Variant?> GetByIdWithVariantAttributesAsync(Guid id)
+    {
+        return _context.Variants
+            .Include(v => v.VariantAttributes!)
+                .ThenInclude(va => va.AttributeValue)
+            .FirstOrDefaultAsync(v => v.Id == id);
+    }
+
+    public Task<List<Variant>> GetByProductId(Guid productId)
+    {
+        return _context.Variants
+            .Include(v => v.VariantAttributes!)
+                .ThenInclude(va => va.AttributeValue)
+            .Where(v => v.ProductId == productId)
+            .ToListAsync();
+    }
+
+    public Task IncreaseStockAsync(Guid variantId, int quantity)
+    {
+        var variant = _context.Variants.FirstOrDefault(v => v.Id == variantId);
+        if (variant != null)
+        {
+            variant.Stock += quantity;
+            return _context.SaveChangesAsync();
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateStockAsync(Guid variantId, int quantity)
+    {
+        var variant = _context.Variants.FirstOrDefault(v => v.Id == variantId);
+        if (variant != null)
+        {
+            variant.Stock = quantity;
+            return _context.SaveChangesAsync();
+        }
+        return Task.CompletedTask;
+    }
+}

@@ -1,7 +1,7 @@
 using System;
 using DearHome_Backend.Models;
 
-namespace DearHome_Backend.Constants;
+namespace DearHome_Backend.Models;
 
 public class Payment  : BaseEntity
 {
@@ -13,4 +13,5 @@ public class Payment  : BaseEntity
     public bool IsDefault { get; set; } = false;
     public required Guid UserId { get; set; }
     public virtual User? User { get; set; }
+    public virtual ICollection<Order>? Orders { get; set; } = new HashSet<Order>();
 }
