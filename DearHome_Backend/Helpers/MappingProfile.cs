@@ -8,6 +8,7 @@ using DearHome_Backend.DTOs.CategoryAttributeDtos;
 using DearHome_Backend.DTOs.CategoryDtos;
 using DearHome_Backend.DTOs.GoodReceivedItemDtos;
 using DearHome_Backend.DTOs.GoodReceivedNoteDtos;
+using DearHome_Backend.DTOs.OrderDtos;
 using DearHome_Backend.DTOs.PlacementDtos;
 using DearHome_Backend.DTOs.ProductDtos;
 using DearHome_Backend.DTOs.UserDtos;
@@ -15,6 +16,7 @@ using DearHome_Backend.DTOs.VariantAttributeDtos;
 using DearHome_Backend.DTOs.VariantDtos;
 using DearHome_Backend.Modals;
 using DearHome_Backend.Models;
+using DearHome_Backend.Models.OrderDetailDtos;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace DearHome_Backend.Helpers;
@@ -49,6 +51,7 @@ public class MappingProfile : Profile
         CreateMap<AttributeValue, AttributeValueDto>();
         CreateMap<UpdateAttributeValueDto, AttributeValue>();
 
+        CreateMap<Product, ProductDto>();
         CreateMap<AddProductDto, Product>();
         CreateMap<UpdateProductDto, Product>();
 
@@ -67,5 +70,9 @@ public class MappingProfile : Profile
         CreateMap<AddGoodReceivedItemDto, GoodReceivedItem>();
         CreateMap<GoodReceivedItem, GoodReceivedItemDto>();
         CreateMap<UpdateGoodReceivedItemDto, GoodReceivedItem>();
+
+        CreateMap<AddOrderDto, Order>();
+
+        CreateMap<AddOrderDetailDto, OrderDetail>();
     }
 }

@@ -17,9 +17,9 @@ public class VariantService : BaseService<Variant>, IVariantService
         _variantAttributeRepository = variantAttributeRepository ?? throw new ArgumentNullException(nameof(variantAttributeRepository));
     }
 
-    public Task<List<Variant>> GetByProductIdAsync(Guid productId)
+    public async Task<IEnumerable<Variant>> GetByProductIdAsync(Guid productId)
     {
-        return _variantRepository.GetByProductId(productId);
+        return await _variantRepository.GetByProductIdAsync(productId);
     }
 
     public override async Task<Variant> UpdateAsync(Variant entity)

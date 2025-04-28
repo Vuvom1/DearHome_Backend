@@ -49,16 +49,24 @@ public class AttributeService : BaseService<Models.Attribute>, IAttributeService
             throw new KeyNotFoundException($"Attribute with ID {entity.Id} not found.");
         }
 
-        // Update the existing entity's properties
-        // Remove all old attribute values
-        if (existingEntity.AttributeValues != null)
+        //Track the existing attribute values
+        var existingAttributeValues = existingEntity.AttributeValues!.ToList();
+
+        //Track the attribute values that are in the existing entity but not in the new entity
+        var attributeValuesToRemove = existingAttributeValues
+            .Where(av => !entity.AttributeValues!.Any(newAv => newAv.Value == av.Value))
+            .ToList();
+
+        //Remove the existing attribute values that are not in the new list
+        foreach (var attributeValue in attributeValuesToRemove)
         {
-            var attributeValueIds = existingEntity.AttributeValues.Select(av => av.Id).ToList();
-            foreach (var id in attributeValueIds)
-            {
-                await _attributeValueRepository.DeleteAsync(id);
-            }
+            await _attributeValueRepository.DeleteAsync(attributeValue.Id);
         }
+
+        //Remove the existing attribute values from the new entity
+        entity.AttributeValues = entity.AttributeValues!
+            .Where(newAv => !existingAttributeValues.Any(av => av.Value == newAv.Value))
+            .ToList();
         
         return await base.UpdateAsync(entity);
     }

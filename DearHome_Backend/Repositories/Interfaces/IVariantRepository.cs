@@ -5,7 +5,7 @@ namespace DearHome_Backend.Repositories.Interfaces;
 
 public interface IVariantRepository : IBaseRepository<Variant>
 {
-    Task<List<Variant>> GetByProductId(Guid productId);
+    Task<IEnumerable<Variant>> GetByProductIdAsync(Guid productId);
     Task<Variant?> GetByIdWithVariantAttributesAsync(Guid id);
     Task IncreaseStockAsync(Guid variantId, int quantity);
     Task UpdateStockAsync(Guid variantId, int quantity);

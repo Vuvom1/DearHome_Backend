@@ -13,14 +13,13 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.Id).ValueGeneratedOnAdd();
         builder.Property(o => o.OrderDate).IsRequired();
         builder.Property(o => o.TotalPrice).IsRequired();
-        builder.Property(o => o.ShippingPrice).IsRequired();
         builder.Property(o => o.Discount).IsRequired();
-        builder.Property(o => o.Tax).IsRequired();
+        builder.Property(o => o.ShippingRate).IsRequired(false);
+        builder.Property(o => o.PromotionId).IsRequired(false);
+        builder.Property(o => o.ShippingCode).IsRequired(false);
         builder.Property(o => o.FinalPrice).IsRequired();
-        builder.Property(o => o.PromotionID).IsRequired();
         builder.Property(o => o.Note).HasMaxLength(500);
-        builder.Property(o => o.TrackingNumber).HasMaxLength(100);
-        builder.Property(o => o.DeliveryDate).IsRequired(false);
+        builder.Property(o => o.ShippingCode).HasMaxLength(50);
         builder.Property(o => o.AddressId).IsRequired();
 
         builder.HasOne(o => o.Address)
@@ -30,12 +29,8 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.HasOne(o => o.Promotion)
             .WithMany(p => p.Orders)
-            .HasForeignKey(o => o.PromotionID)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder.HasOne(o => o.Payment)
-            .WithMany(p => p.Orders)
-            .HasForeignKey(o => o.PaymentId)
+            .HasForeignKey(o => o.PromotionId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.Property(o => o.PaymentMethod).IsRequired();
@@ -46,5 +41,10 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
             .WithMany(u => u.Orders)
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.NoAction);
+        
+        builder.HasMany(o => o.OrderDetails)
+            .WithOne(od => od.Order)
+            .HasForeignKey(od => od.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

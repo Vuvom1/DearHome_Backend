@@ -10,6 +10,8 @@ using DearHome_Backend.Middlewares;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using System.Text.Json;
+using Microsoft.ApplicationInsights.DependencyCollector;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +40,19 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>() // Use IdentityRole<Gui
 
 ServiceExtensions.AddScopedServices(builder.Services);
 ServiceExtensions.AddScopedRepositories(builder.Services);
+ServiceExtensions.AddHttpClients(builder.Services, builder.Configuration);
+
+
+builder.Services.AddApplicationInsightsTelemetry(options => {
+    options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+    options.EnableAdaptiveSampling = true;
+    options.EnableQuickPulseMetricStream = true;
+});
+
+// Enable dependency tracking for HttpClient
+builder.Services.ConfigureTelemetryModule<DependencyTrackingTelemetryModule>((module, o) => {
+    module.EnableSqlCommandTextInstrumentation = true;
+});
 
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
@@ -56,6 +71,21 @@ if (FirebaseApp.DefaultInstance == null)
     FirebaseApp.Create(new AppOptions()
     {
         Credential = GoogleCredential.FromFile(firebaseCredentialPath)
+    });
+}
+
+// Development environment: Use in-memory cache
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+// Production environment: Use Azure Redis Cache
+else
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
+        options.InstanceName = "DearHome_";
     });
 }
 

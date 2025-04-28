@@ -5,5 +5,5 @@ namespace DearHome_Backend.Services.Interfaces;
 
 public interface IVariantService : IBaseService<Variant>
 {
-    Task<List<Variant>> GetByProductIdAsync(Guid productId);
+    Task<IEnumerable<Variant>> GetByProductIdAsync(Guid productId);
 }

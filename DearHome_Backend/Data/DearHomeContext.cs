@@ -21,6 +21,7 @@ public class DearHomeContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<VerificationCode> VerificationCodes { get; set; }
     public DbSet<Payment> Payments { get; set; }
     public DbSet<Order> Orders { get; set; }
+    public DbSet<OrderDetail> OrderDetails { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<Address> Addresses { get; set; }
     public DbSet<Models.Attribute> Attributes { get; set; }

@@ -12,18 +12,15 @@ public class Order : BaseEntity
     public virtual Address? Address { get; set; }
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
     public decimal TotalPrice { get; set; } = 0;
-    public decimal ShippingPrice { get; set; } = 0;
     public decimal Discount { get; set; } = 0;
-    public decimal Tax { get; set; } = 0;
     public decimal FinalPrice { get; set; } = 0;
-    public Guid PromotionID { get; set; }
+    public Guid? PromotionId { get; set; }
     public virtual Promotion? Promotion { get; set; }
     public string? Note { get; set; }
     public DateTime OrderDate { get; set; } = DateTime.UtcNow;
-    public DateTime? DeliveryDate { get; set; }
-    public string? TrackingNumber { get; set; }
-    public string? PaymentMethod { get; set; }
-    public Guid? PaymentId { get; set; }
-    public virtual Payment? Payment { get; set; }
+    public string? ShippingRate { get; set; }
+    public string? ShippingCode { get; set; }
+    public PaymentMethods? PaymentMethod { get; set; }
+    public virtual ICollection<OrderDetail>? OrderDetails { get; set; }
     
 }

@@ -10,7 +10,7 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
 {
     private new readonly DearHomeContext _context;
     public ProductRepository(DearHomeContext context) : base(context)
-    {   
+    {
         _context = context;
     }
 
@@ -32,8 +32,13 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
     public Task<Product?> GetByIdWithAttributeValuesAndVariantsAsync(Guid id)
     {
         return _context.Products
-            .Include(p => p.AttributeValues)
-            .Include(p => p.Variants)
+            .Include(p => p.Category)
+             .ThenInclude(c => c!.CategoryAttributes!)
+             .ThenInclude(ca => ca.Attribute)
+            .Include(p => p.Placement)
+            .Include(p => p.Variants!)
+                .ThenInclude(v => v.VariantAttributes!)
+                .ThenInclude(v => v.AttributeValue)
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 

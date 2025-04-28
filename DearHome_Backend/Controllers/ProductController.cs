@@ -48,7 +48,8 @@ namespace DearHome_Backend.Controllers
             {
                 return NotFound();
             }
-            return Ok(product);
+            var productDto = _mapper.Map<ProductDto>(product);
+            return Ok(productDto);
         }
 
         [HttpPost]

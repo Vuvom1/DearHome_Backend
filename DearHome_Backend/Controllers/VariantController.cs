@@ -1,4 +1,5 @@
 using AutoMapper;
+using DearHome_Backend.DTOs.VariantAttributeDtos;
 using DearHome_Backend.DTOs.VariantDtos;
 using DearHome_Backend.Models;
 using DearHome_Backend.Services.Interfaces;
@@ -46,7 +47,8 @@ namespace DearHome_Backend.Controllers
             {
                 return NotFound($"No variants found for product with ID {productId}.");
             }
-            return Ok(variants);
+            var result = _mapper.Map<IEnumerable<VariantDto>>(variants);
+            return Ok(result);
         }
 
         [HttpPost]

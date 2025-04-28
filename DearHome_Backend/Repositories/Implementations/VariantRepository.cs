@@ -8,7 +8,7 @@ namespace DearHome_Backend.Repositories.Implementations;
 
 public class VariantRepository : BaseRepository<Variant>, IVariantRepository
 {
-    private readonly DearHomeContext _context;
+    private new readonly DearHomeContext _context;
     public VariantRepository(DearHomeContext context) : base(context)
     {
         _context = context;
@@ -22,12 +22,12 @@ public class VariantRepository : BaseRepository<Variant>, IVariantRepository
             .FirstOrDefaultAsync(v => v.Id == id);
     }
 
-    public Task<List<Variant>> GetByProductId(Guid productId)
+    public async Task<IEnumerable<Variant>> GetByProductIdAsync(Guid productId)
     {
-        return _context.Variants
+        return await _context.Variants
+            .Where(v => v.ProductId == productId) 
             .Include(v => v.VariantAttributes!)
                 .ThenInclude(va => va.AttributeValue)
-            .Where(v => v.ProductId == productId)
             .ToListAsync();
     }
 
