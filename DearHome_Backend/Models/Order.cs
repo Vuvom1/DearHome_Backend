@@ -21,6 +21,9 @@ public class Order : BaseEntity
     public string? ShippingRate { get; set; }
     public string? ShippingCode { get; set; }
     public PaymentMethods? PaymentMethod { get; set; }
+    public long? PaymentOrderCode { get; set; }
+    public string? PaymentLinkId { get; set; }
+    public string? PaymentLinkUrl { get; set; }
     public virtual ICollection<OrderDetail>? OrderDetails { get; set; }
     
 }

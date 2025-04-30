@@ -1,6 +1,7 @@
 # Build Folders
 bin/
 obj/
+publish/
 
 # User-specific files
 *.rsuser
@@ -72,3 +73,4 @@ secrets.json
 *.DS_Store
 Thumbs.db
 DearHome_Backend/Credentials/makemyhome-27df4-firebase-adminsdk-hsal7-09e697d0ff.json
+DearHome_Backend/publish/publish/Credentials/makemyhome-27df4-firebase-adminsdk-hsal7-09e697d0ff.json

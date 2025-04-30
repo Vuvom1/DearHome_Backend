@@ -14,4 +14,5 @@ public interface IShippingService
     Task<bool> UpdateShippingStatusAsync(Guid orderId, string status);
     Task<object> GetCitiesAsync();
     Task<object> GetDistrictsByCityIdAsync(string cityId);
+    Task<object> GetWardsByDistrictIdAsync(string districtId);
 }

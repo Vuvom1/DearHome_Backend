@@ -1,4 +1,5 @@
 using AutoMapper;
+using DearHome_Backend.Constants;
 using DearHome_Backend.DTOs.OrderDtos;
 using DearHome_Backend.Models;
 using DearHome_Backend.Services.Interfaces;
@@ -24,7 +25,7 @@ namespace DearHome_Backend.Controllers
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateOrder([FromBody] AddOrderDto addOrderDto)
+        public async Task<IActionResult> CreateOrder([FromBody] AddOrderDto addOrderDto, [FromQuery] string returnUrl)
         {
             if (addOrderDto == null)
             {
@@ -32,8 +33,15 @@ namespace DearHome_Backend.Controllers
             }
 
             var order = _mapper.Map<Order>(addOrderDto);
+
+            if (order.PaymentMethod == PaymentMethods.BankTransfer)
+            {
+                var paymentResult = await _orderService.AddOrderWithOnlinePaymentAsync(order, returnUrl);
+                return Ok(paymentResult);
+            }
+
             var createdOrder = await _orderService.CreateAsync(order);
-            return Ok(createdOrder);
+            return Ok("Order created successfully.");
         }
 
         [HttpGet("{id}")]

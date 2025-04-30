@@ -16,6 +16,35 @@ namespace DearHome_Backend.Controllers
             _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
         }
 
+        [HttpGet("get-payment-link-infomation")]
+        public async Task<IActionResult> GetPaymentLinkInformation([FromQuery] long id)
+        {
+            var paymentInfo = await _paymentService.GetPaymentLinkInformationAsync(id);
+            return Ok(paymentInfo);
+        }
+
+        [HttpPost("verify-webhook")]
+        public IActionResult VerifyWebhook([FromQuery] VerifyPaymentDto verifyPaymentDto)
+        {
+            if (verifyPaymentDto == null)
+            {
+                return BadRequest("Webhook data cannot be null.");
+            }
+
+            // Return 200 OK to acknowledge receipt of webhook
+            return Ok();
+        }
+
+        [HttpPost("verify-payment")]
+        public async Task<IActionResult> VerifyPayment([FromBody] VerifyPaymentDto verifyPaymentDto)
+        {
+                
+            // Process the webhook data
+            await _paymentService.VerifyPaymentAsync(verifyPaymentDto);
+                
+            // Return 200 OK to acknowledge receipt of webhook
+            return Ok();
+        }
         
     }
 }

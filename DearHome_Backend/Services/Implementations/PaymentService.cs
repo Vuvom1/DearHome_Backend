@@ -9,12 +9,15 @@ using Net.payOS;
 using Net.payOS.Types;
 using System.Collections.Generic;
 using DearHome_Backend.DTOs.PaymentDto;
+using DearHome_Backend.Repositories.Interfaces;
+using DearHome_Backend.Constants;
 
 namespace DearHome_Backend.Services.Implementations;
 
 public class PaymentService : IPaymentService
 {
     private readonly PayOS _payOS;
+    private readonly IOrderRepository _orderRepository;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PaymentService> _logger;
     private readonly TelemetryClient _telemetryClient;
@@ -24,12 +27,14 @@ public class PaymentService : IPaymentService
         IConfiguration configuration,
         ILogger<PaymentService> logger,
         TelemetryClient telemetryClient,
-        HttpClient httpClient)
+        HttpClient httpClient,
+        IOrderRepository orderRepository)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _telemetryClient = telemetryClient ?? throw new ArgumentNullException(nameof(telemetryClient));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
 
         // Initialize PayOS with secure configuration management
         string clientId = _configuration["PayOS:PAYOS_CLIENT_ID"]!;
@@ -72,31 +77,31 @@ public class PaymentService : IPaymentService
             // Create payment request
             long orderCode = order.Id.ToString().GetHashCode() & 0x7FFFFFFF; // Convert Guid to positive long integer
             int amount = (int)order.FinalPrice; // Convert to smallest currency unit (cents)
-            string description = $"Payment for order #{order.Id}";
+            string description = $"Payment for order";
             var items = MapOrderItemsToPayOSItems(order);
             string buyerName = user.Name;
             string buyerEmail = user.Email!;
             string buyerPhone = user.PhoneNumber ?? string.Empty;
             string buyerAddress = order.Address != null ? 
                 $"{order.Address.Street}, {order.Address.District}, {order.Address.City}" : string.Empty;
-            string returnUrl = $"{url}/success";
-            string cancelUrl = $"{url}/cancel";
+            string returnUrl = $"{url}#/verify-payment";
+            string cancelUrl = $"{url}#/verify-payment";
             string extraData = $"Order ID: {order.Id}, User ID: {user.Id}";
             long expiredAt = new DateTimeOffset(DateTime.UtcNow.AddHours(24)).ToUnixTimeSeconds();
+            string signature = user.Name; 
 
-            
             var paymentData = new PaymentData(
-                orderCode,
-                amount,
-                description,
-                items,
-                buyerName,
-                buyerEmail,
-                buyerPhone,
-                buyerAddress,
-                returnUrl,
-                cancelUrl,
-                extraData,
+                orderCode, 
+                amount, 
+                description, 
+                items, 
+                cancelUrl, 
+                returnUrl, 
+                signature, 
+                buyerName, 
+                buyerEmail, 
+                buyerPhone, 
+                buyerAddress, 
                 expiredAt
             );
 
@@ -152,6 +157,21 @@ public class PaymentService : IPaymentService
         }
     }
 
+    public async Task<PaymentLinkInformation> VerifyPaymentAsync(VerifyPaymentDto verifyPaymentDto)
+    {
+        if (verifyPaymentDto.Status == "PAID") {
+            // Update order status to "Paid"
+            await _orderRepository.UpdateOrderStatusByPaymentOrderCodeAsync(verifyPaymentDto.OrderCode, OrderStatus.Paid);
+        }
+        else if (verifyPaymentDto.Status == "CANCELLED")
+        {
+            // Update order status to "Cancelled"
+            await _orderRepository.UpdateOrderStatusByPaymentOrderCodeAsync(verifyPaymentDto.OrderCode, OrderStatus.Cancelled);
+        }
+
+        return await GetPaymentLinkInformationAsync(verifyPaymentDto.OrderCode);
+    }
+
     public bool VerifyWebhookSignature(WebhookType body)
     {
         try
@@ -174,11 +194,18 @@ public class PaymentService : IPaymentService
         {
             foreach (var orderItem in order.OrderDetails)
             {
-                items.Add(new ItemData(
-                    orderItem.Variant!.Product!.Name,
-                    (int)(orderItem.Variant.PriceAdjustment + orderItem.Variant.Product.Price),
-                    orderItem.Quantity
-                ));
+                if (orderItem.Variant != null && orderItem.Variant.Product != null)
+                {
+                    items.Add(new ItemData(
+                        orderItem.Variant.Product.Name,
+                        (int)(orderItem.Variant.PriceAdjustment + orderItem.Variant.Product.Price),
+                        orderItem.Quantity
+                    ));
+                }
+                else
+                {
+                    _logger.LogWarning("Skipping order item with missing variant or product data for order {OrderId}", order.Id);
+                }
             }
         }
         

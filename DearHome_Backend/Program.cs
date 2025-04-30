@@ -12,6 +12,7 @@ using Google.Apis.Auth.OAuth2;
 using System.Text.Json;
 using Microsoft.ApplicationInsights.DependencyCollector;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
+using Microsoft.Extensions.Caching.Distributed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -41,7 +42,6 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>() // Use IdentityRole<Gui
 ServiceExtensions.AddScopedServices(builder.Services);
 ServiceExtensions.AddScopedRepositories(builder.Services);
 ServiceExtensions.AddHttpClients(builder.Services, builder.Configuration);
-
 
 builder.Services.AddApplicationInsightsTelemetry(options => {
     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
@@ -84,8 +84,8 @@ else
 {
     builder.Services.AddStackExchangeRedisCache(options =>
     {
-        options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
-        options.InstanceName = "DearHome_";
+        options.Configuration = builder.Configuration["Redis:ConnectionString"];
+        options.InstanceName = builder.Configuration["Redis:InstanceName"];
     });
 }
 

@@ -246,7 +246,7 @@ public class UserService : IUserService
     }
 
     public Task<User?> GetUserAsync(Guid id)
-    {
+    {        
         return _userRepository.GetByIdAsync(id);
     }
 
@@ -277,25 +277,43 @@ public class UserService : IUserService
             }
         }
 
-        //Remove all existing addresses
+        //Update the user addresses
         if (existingUser.Addresses != null)
         {
             foreach (var address in existingUser.Addresses)
             {
-                await _addressRepository.DeleteAsync(address.Id);
+                var updatedAddress = user.Addresses?.FirstOrDefault(a => a.Id == address.Id);
+                if (updatedAddress != null)
+                {
+                    address.Street = updatedAddress.Street;
+                    address.Ward = updatedAddress.Ward;
+                    address.City = updatedAddress.City;
+                    address.District = updatedAddress.District;
+                    address.City = updatedAddress.City;
+                    address.PostalCode = updatedAddress.PostalCode;
+                    address.IsDefault = updatedAddress.IsDefault;
+        
+                    await _addressRepository.UpdateAsync(address);
+                }
+                else                {
+                    // If the address is not in the updated user, remove it
+                    await _addressRepository.DeleteAsync(address);
+                }
             }
         }
 
-        //Add new addresses
-        if (user.Addresses != null)
+        //Add new addresses if (user.Addresses != null)
         {
-            foreach (var address in user.Addresses)
+            foreach (var address in user.Addresses!)
             {
-                address.UserId = user.Id;
-                await _addressRepository.AddAsync(address);
+                if (address.Id == Guid.Empty)
+                {
+                    address.UserId = user.Id;
+                    await _addressRepository.AddAsync(address);
+                }
             }
         }
-        
+
         await _userRepository.UpdateAsync(user);
     }
 }

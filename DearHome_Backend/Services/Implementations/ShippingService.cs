@@ -9,7 +9,7 @@ using System.Net.Http.Headers;
 using DearHome_Backend.DTOs.ShippingDtos;
 using DearHome_Backend.Repositories.Interfaces;
 using Microsoft.ApplicationInsights;
-
+using Microsoft.ApplicationInsights.DataContracts;
 
 public class ShippingService : IShippingService
 {
@@ -45,12 +45,61 @@ public class ShippingService : IShippingService
     }
     public async Task<string> GetValidationTokenAsync()
     {
-        using var operation = _telemetryClient.StartOperation<Microsoft.ApplicationInsights.DataContracts.DependencyTelemetry>("GetValidToken");
+        using var operation = _telemetryClient.StartOperation<DependencyTelemetry>("GetValidToken");
         try
         {
-            // Try to get the token from cache
-            string accessToken = await _cache.GetStringAsync(TokenCacheKey);
-            string expiryTimeString = await _cache.GetStringAsync(ExpiryTimeCacheKey);
+            string accessToken = null;
+            string expiryTimeString = null;
+            bool cacheOperationSucceeded = true;
+
+            // Add retry policy for Redis operations
+            int maxRetries = 3;
+            int currentRetry = 0;
+            TimeSpan delay = TimeSpan.FromSeconds(1);
+
+            while (currentRetry <= maxRetries)
+            {
+                try
+                {
+                    // Try to get the token from cache with retry logic
+                    accessToken = await _cache.GetStringAsync(TokenCacheKey);
+                    expiryTimeString = await _cache.GetStringAsync(ExpiryTimeCacheKey);
+                    break; // Success, exit retry loop
+                }
+                catch (Exception ex) when (ex is StackExchange.Redis.RedisConnectionException ||
+                                          ex is StackExchange.Redis.RedisTimeoutException ||
+                                          ex is System.Net.Sockets.SocketException)
+                {
+                    // Only retry on connection-related exceptions
+                    if (currentRetry == maxRetries)
+                    {
+                        _logger.LogError(ex, "Redis cache access failed after {RetryCount} retries", maxRetries);
+                        _telemetryClient.TrackEvent("RedisCacheFailure", new Dictionary<string, string>
+                    {
+                        { "Operation", "GetToken" },
+                        { "Error", ex.Message }
+                    });
+                        cacheOperationSucceeded = false;
+                        break;
+                    }
+
+                    currentRetry++;
+                    _logger.LogWarning(ex, "Redis cache access failed (attempt {RetryCount}/{MaxRetries}). Retrying...",
+                        currentRetry, maxRetries);
+
+                    // Track dependency failure with Application Insights
+                    _telemetryClient.TrackDependency(
+                        "Redis",
+                        "GetToken",
+                        $"{TokenCacheKey}/{ExpiryTimeCacheKey}",
+                        DateTimeOffset.UtcNow,
+                        TimeSpan.FromMilliseconds(500),
+                        false);
+
+                    await Task.Delay(delay);
+                    delay = TimeSpan.FromSeconds(Math.Min(30, Math.Pow(2, currentRetry))); // Exponential backoff up to 30 seconds
+                }
+            }
 
             bool tokenValid = false;
 
@@ -60,6 +109,9 @@ public class ShippingService : IShippingService
                 {
                     // Check if token is still valid (with 5-minute buffer)
                     tokenValid = expiryTime > DateTime.UtcNow.AddMinutes(5);
+
+                    // Add telemetry for token validation
+                    _telemetryClient.TrackMetric("TokenTimeRemaining", (expiryTime - DateTime.UtcNow).TotalMinutes);
                 }
             }
 
@@ -73,14 +125,59 @@ public class ShippingService : IShippingService
                 // Calculate expiry time
                 var expiryTime = DateTime.UtcNow.AddSeconds(expiresIn);
 
-                // Cache the new token with distributed cache options
+                // Create cache options
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(expiresIn - 60) // 1 minute before actual expiry
                 };
 
-                await _cache.SetStringAsync(TokenCacheKey, newToken, cacheOptions);
-                await _cache.SetStringAsync(ExpiryTimeCacheKey, expiryTime.ToString("o"), cacheOptions);
+                // Only try to cache if the previous cache operations succeeded
+                if (cacheOperationSucceeded)
+                {
+                    currentRetry = 0;
+                    delay = TimeSpan.FromSeconds(1);
+
+                    while (currentRetry <= maxRetries)
+                    {
+                        try
+                        {
+                            // Use multiple Set operations in a more resilient way
+                            await Task.WhenAll(
+                                _cache.SetStringAsync(TokenCacheKey, newToken, cacheOptions),
+                                _cache.SetStringAsync(ExpiryTimeCacheKey, expiryTime.ToString("o"), cacheOptions)
+                            );
+
+                            _logger.LogInformation("Successfully cached GoShip token. Expires at {ExpiryTime}", expiryTime);
+                            break; // Success, exit retry loop
+                        }
+                        catch (Exception ex) when (ex is StackExchange.Redis.RedisConnectionException ||
+                                                 ex is StackExchange.Redis.RedisTimeoutException ||
+                                                 ex is System.Net.Sockets.SocketException)
+                        {
+                            if (currentRetry == maxRetries)
+                            {
+                                _logger.LogError(ex, "Failed to cache GoShip token after {RetryCount} retries", maxRetries);
+                                _telemetryClient.TrackEvent("RedisCacheSetFailure", new Dictionary<string, string>
+                            {
+                                { "Operation", "SetToken" },
+                                { "Error", ex.Message }
+                            });
+                                break;
+                            }
+
+                            currentRetry++;
+                            _logger.LogWarning(ex, "Redis cache write failed (attempt {RetryCount}/{MaxRetries}). Retrying...",
+                                currentRetry, maxRetries);
+
+                            await Task.Delay(delay);
+                            delay = TimeSpan.FromSeconds(Math.Min(30, Math.Pow(2, currentRetry))); // Exponential backoff
+                        }
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Skipping token caching due to previous Redis failures");
+                }
 
                 accessToken = newToken;
             }
@@ -90,8 +187,22 @@ public class ShippingService : IShippingService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while getting valid GoShip token");
-            _telemetryClient.TrackException(ex);
-            throw;
+            _telemetryClient.TrackException(ex, new Dictionary<string, string> {
+            { "Method", "GetValidationTokenAsync" }
+        });
+
+            // Try direct token acquisition as fallback
+            try
+            {
+                _logger.LogWarning("Attempting emergency direct token acquisition");
+                var (emergencyToken, _) = await RequestNewTokenAsync();
+                return emergencyToken;
+            }
+            catch (Exception fallbackEx)
+            {
+                _logger.LogError(fallbackEx, "Emergency token acquisition failed");
+                throw; // Re-throw the original exception
+            }
         }
     }
 
@@ -195,7 +306,7 @@ public class ShippingService : IShippingService
         }
         var cityId = address.City;
         var districtId = address.District;
-        
+
         var request = new
         {
             shipment = new
@@ -210,7 +321,7 @@ public class ShippingService : IShippingService
                     city = cityId,
                     district = districtId,
                 },
-                parcel =  new
+                parcel = new
                 {
                     code = cod,
                     width = width,
@@ -234,7 +345,7 @@ public class ShippingService : IShippingService
         }
 
         var shippingCostResult = await response.Content.ReadFromJsonAsync<GoshipShippingCostResponse>();
-        
+
         if (shippingCostResult == null)
         {
             throw new Exception("Invalid shipping cost response from GoShip API");
@@ -308,11 +419,11 @@ public class ShippingService : IShippingService
                 {
                     name = "Dear Home",
                     phone = "123456789",
-                    street =  "123 Main St",
+                    street = "123 Main St",
                     ward = "9233",
                     city = "700000",
                     district = "700700",
-                
+
                 },
                 address_to = new
                 {
@@ -349,6 +460,28 @@ public class ShippingService : IShippingService
             throw new Exception("Invalid shipment response from GoShip API");
         }
         return shipmentResult;
+    }
+
+    public async Task<object> GetWardsByDistrictIdAsync(string districtId)
+    {
+        var token = GetValidationTokenAsync();
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Result);
+        var response = await _httpClient.GetAsync($"districts/{districtId}/wards");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogError("Failed to get wards. Status: {StatusCode}, Error: {Error}",
+                response.StatusCode, errorContent);
+            throw new Exception($"Failed to get wards: {errorContent}");
+        }
+
+        var wardsResult = await response.Content.ReadFromJsonAsync<GoshipResponse>();
+        if (wardsResult == null)
+        {
+            throw new Exception("Invalid wards response from GoShip API");
+        }
+        return wardsResult.data;
     }
 }
 

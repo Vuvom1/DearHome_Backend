@@ -31,6 +31,13 @@ public class VariantRepository : BaseRepository<Variant>, IVariantRepository
             .ToListAsync();
     }
 
+    public async Task<Variant?> GetWithProductByIdAsync(Guid id)
+    {
+        return await _context.Variants
+            .Include(v => v.Product)
+            .FirstOrDefaultAsync(v => id == v.Id);
+    }
+
     public Task IncreaseStockAsync(Guid variantId, int quantity)
     {
         var variant = _context.Variants.FirstOrDefault(v => v.Id == variantId);

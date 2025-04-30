@@ -51,5 +51,12 @@ namespace DearHome_Backend.Controllers
             var districts = await _shippingService.GetDistrictsByCityIdAsync(cityId);
             return Ok(districts);
         }
+
+        [HttpGet("get-wards/{districtId}")]        
+        public async Task<IActionResult> GetWardsByDistrictId(string districtId)
+        {
+            var wards = await _shippingService.GetWardsByDistrictIdAsync(districtId);
+            return Ok(wards);
+        }
     }
 }
