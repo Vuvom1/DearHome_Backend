@@ -397,6 +397,8 @@ public class ShippingService : IShippingService
         return citiesResult.data;
     }
 
+    
+
     public async Task<GoshipCreateShipmentResponse> CreateShipmentAsync(string shippingRate, Guid addressFromId, Guid addressToId, string cod, string weight, string length, string width, string height)
     {
         var token = GetValidationTokenAsync();
@@ -482,6 +484,65 @@ public class ShippingService : IShippingService
             throw new Exception("Invalid wards response from GoShip API");
         }
         return wardsResult.data;
+    }
+
+    public async Task<object> GetCitiesByCodeAsync(string code)
+    {
+        object cities = await GetCitiesAsync();
+        
+        // Handle JsonElement properly
+        var citiesElement = (System.Text.Json.JsonElement)cities;
+        System.Text.Json.JsonElement? foundCity = null;
+        
+        if (citiesElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+        {
+            foreach (var city in citiesElement.EnumerateArray())
+            {
+                if (city.TryGetProperty("id", out var idProperty) && 
+                    idProperty.GetString() == code)
+                {
+                    foundCity = city;
+                    break;
+                }
+            }
+        }
+        
+        if (foundCity == null)
+        {
+            throw new Exception("City not found");
+        }
+        
+        return foundCity.Value;
+    }
+
+    public async Task<object> GetFormatedAddressAsync(Guid addressId)
+    {
+        var address = await _addressRepository.GetByIdAsync(addressId);
+        if (address == null)
+        {
+            throw new Exception("Address not found");
+        }
+        var city = await GetCitiesByCodeAsync(address.City!);
+
+        var districts = await GetDistrictsByCityIdAsync(address.City!);
+        var district = ((System.Text.Json.JsonElement)districts).EnumerateArray()
+            .FirstOrDefault(d => d.GetProperty("id").GetString() == address.District);
+
+        var wards = await GetWardsByDistrictIdAsync(address.District!);
+        var ward = ((System.Text.Json.JsonElement)wards).EnumerateArray()
+            .FirstOrDefault(w => w.GetProperty("id").ValueKind == System.Text.Json.JsonValueKind.Number 
+                ? w.GetProperty("id").GetInt64().ToString() == address.Ward
+                : w.GetProperty("id").GetString() == address.Ward);
+
+        var formatedAddress = new
+        {
+            id = address.Id,
+            address.Street,
+            city,
+            district,
+            ward
+        };
+        return formatedAddress;
     }
 }
 

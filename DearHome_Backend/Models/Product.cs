@@ -17,4 +17,5 @@ public class Product : BaseEntity
     public virtual string Status { get; set; } = "Available";
     public virtual List<Variant>? Variants { get; set; } = new List<Variant>();
     public virtual ICollection<AttributeValue>? AttributeValues { get; set; } = new List<AttributeValue>();
+    public virtual ICollection<Promotion>? Promotions { get; set; } = new List<Promotion>();
 }

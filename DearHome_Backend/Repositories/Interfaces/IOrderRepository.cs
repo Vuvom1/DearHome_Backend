@@ -6,5 +6,9 @@ namespace DearHome_Backend.Repositories.Interfaces;
 
 public interface IOrderRepository : IBaseRepository<Order>
 {
-    Task UpdateOrderStatusByPaymentOrderCodeAsync(long paymentOrderCode, OrderStatus status);   
+    Task<IEnumerable<Order>> GetAllAsync(int offSet, int limit);
+    Task UpdateOrderStatusByPaymentOrderCodeAsync(long paymentOrderCode, OrderStatus status); 
+    Task UpdateOrderStatusByIdAsync(Guid orderId, OrderStatus status);  
+    Task<bool> IsPromotionUsedByUserId(Guid userId, Guid promotionId);
+    Task<IEnumerable<Guid>> GetUsedPromotionIdsByUserId(Guid userId);
 }

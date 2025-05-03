@@ -24,6 +24,14 @@ namespace DearHome_Backend.Controllers
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        [HttpGet] 
+        public async Task<IActionResult> GetAllOrders([FromQuery] int offSet = 1, [FromQuery] int pageSize = 10)
+        {
+            var orders = await _orderService.GetAllAsync(offSet, pageSize);
+            var orderDtos = _mapper.Map<IEnumerable<OrderDto>>(orders);
+            return Ok(orderDtos);
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreateOrder([FromBody] AddOrderDto addOrderDto, [FromQuery] string returnUrl)
         {
@@ -53,6 +61,13 @@ namespace DearHome_Backend.Controllers
                 return NotFound();
             }
             return Ok(order);
+        }
+
+        [HttpPut("update-status/{id}")]
+        public async Task<IActionResult> UpdateOrderStatus(Guid id, [FromBody] OrderStatus status)
+        {
+            await _orderService.UpdateOrderStatusAsync(id, status);
+            return Ok("Order status updated successfully.");
         }
     }
 }

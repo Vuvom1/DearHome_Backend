@@ -31,57 +31,54 @@ public class OrderService : BaseService<Order>, IOrderService
 
     public async Task<CreatePaymentResult> AddOrderWithOnlinePaymentAsync(Order order, string returnUrl)
     {
-        decimal FinalPrice = 0;
         CreatePaymentResult paymentResult;
         Guid orderId = Guid.NewGuid();
 
-        foreach (var orderDetail in order.OrderDetails!)
-        {
-            var orderItem = await _variantRepository.GetWithProductByIdAsync(orderDetail.VariantId);
-            
-            orderDetail.UnitPrice = orderItem!.PriceAdjustment + orderItem.Product!.Price;
-            orderDetail.TotalPrice = orderDetail.UnitPrice * orderDetail.Quantity;
-
-            FinalPrice += orderDetail.TotalPrice;
-        }
-
-        if (order.PromotionId.HasValue && order.PromotionId == Guid.Empty)
-        {
-            order.PromotionId = null;
-        }
-
-        order.TotalPrice = FinalPrice;
-
-        // Check if the order has a shipping rate
-        // If the order has a shipping rate, create a shipment
-        if (order.ShippingRate != null) {
-            var shipping = await _shippingService.CreateShipmentAsync(order.ShippingRate, order.AddressId, order.AddressId, order.PaymentMethod == PaymentMethods.Cash ? order.TotalPrice.ToString() : "0", "0", "0", "0", "0");
-
-            order.ShippingCode = shipping.Id;
-        
-            FinalPrice += shipping.Fee;
-        }
-
-        order.FinalPrice = FinalPrice;
-        order.Id = orderId;
+        var calculatedOrder = await CalculatedOrderAsync(order);
+        calculatedOrder.Id = orderId;
 
         // Retrieve the user by ID
-        var user = await _userRepository.GetByIdAsync(order.UserId);    
+        var user = await _userRepository.GetByIdAsync(calculatedOrder.UserId);    
 
         // Create payment link
-        paymentResult = await _paymentService.CreatePaymentLinkAsync(order, user!, returnUrl);
+        paymentResult = await _paymentService.CreatePaymentLinkAsync(calculatedOrder, user!, returnUrl);
 
         // Update the order with payment link information
-        order.PaymentLinkId = paymentResult.paymentLinkId;
-        order.PaymentLinkUrl = paymentResult.checkoutUrl;
-        order.PaymentOrderCode = paymentResult.orderCode;
+        calculatedOrder.PaymentLinkId = paymentResult.paymentLinkId;
+        calculatedOrder.PaymentLinkUrl = paymentResult.checkoutUrl;
+        calculatedOrder.PaymentOrderCode = paymentResult.orderCode;
 
-        var createdOrder = await base.CreateAsync(order);
+        var createdOrder = await base.CreateAsync(calculatedOrder);
 
         return paymentResult;
     }
 
     public override async Task<Order> CreateAsync(Order order)
+    {
+        var calculatedOrder = await CalculatedOrderAsync(order);
+
+        var createdOrder = await base.CreateAsync(calculatedOrder);
+
+        var user = await _userRepository.GetByIdAsync(order.UserId);    
+
+        if (order.PaymentMethod == PaymentMethods.BankTransfer) {
+            CreatePaymentResult paymentResult = await _paymentService.CreatePaymentLinkAsync(order, user!, "https://example.com");
+        }
+
+        return createdOrder;
+    }
+
+    public Task<IEnumerable<Order>> GetAllAsync(int offSet, int limit)
+    {
+        return _orderRepository.GetAllAsync(offSet, limit);
+    }
+
+    public async Task UpdateOrderStatusAsync(Guid orderId, OrderStatus status)
+    {
+        await _orderRepository.UpdateOrderStatusByIdAsync(orderId, status);
+    }
+
+    private async Task<Order> CalculatedOrderAsync(Order order)
     {
         decimal FinalPrice = 0;
 
@@ -95,13 +92,23 @@ public class OrderService : BaseService<Order>, IOrderService
             FinalPrice += orderDetail.TotalPrice;
         }
 
+        // Calculate the total price of the order
+        order.TotalPrice = FinalPrice;
+
+        // Check if the order has a promotion ID and set it to null if it's empty
         if (order.PromotionId.HasValue && order.PromotionId == Guid.Empty)
         {
             order.PromotionId = null;
+        } else {
+            var promotion = await _orderRepository.GetByIdAsync(order.PromotionId!);
+            if (promotion != null)
+            {
+                FinalPrice -= FinalPrice * promotion.Discount / 100 ;
+            }
         }
 
         if (order.ShippingRate != null) {
-            var shipping = await _shippingService.CreateShipmentAsync(order.ShippingRate, order.AddressId, order.AddressId, order.PaymentMethod == PaymentMethods.Cash ? order.TotalPrice.ToString() : "0", "0", "0", "0", "0");
+            var shipping = await _shippingService.CreateShipmentAsync(order.ShippingRate, order.AddressId, order.AddressId, order.PaymentMethod == PaymentMethods.Cash ? ((int) order.TotalPrice).ToString() : "0", "0", "0", "0", "0");
 
             order.ShippingCode = shipping.Id;
         
@@ -110,14 +117,6 @@ public class OrderService : BaseService<Order>, IOrderService
 
         order.FinalPrice = FinalPrice;
 
-        var createdOrder = await base.CreateAsync(order);
-
-        var user = await _userRepository.GetByIdAsync(order.UserId);    
-
-        if (order.PaymentMethod == PaymentMethods.BankTransfer) {
-            CreatePaymentResult paymentResult = await _paymentService.CreatePaymentLinkAsync(order, user!, "https://example.com");
-        }
-
-        return createdOrder;
+        return order;
     }
 }

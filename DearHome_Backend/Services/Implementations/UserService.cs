@@ -184,6 +184,10 @@ public class UserService : IUserService
         {
             throw new InvalidOperationException("User registration failed: " + string.Join(", ", result.Errors.Select(e => e.Description)));
         }
+
+        // Assign roles to the user
+        var roleResult = await _userManager.AddToRoleAsync(user, UserRole.User.ToString());
+
         return user;
     }
 
@@ -315,5 +319,10 @@ public class UserService : IUserService
         }
 
         await _userRepository.UpdateAsync(user);
+    }
+
+    public Task<IEnumerable<User>> GetAllCustomersAsync(int offSet, int limit)
+    {
+        return _userRepository.GetAllCustomersAsync(offSet, limit);
     }
 }

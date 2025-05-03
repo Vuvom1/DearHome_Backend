@@ -58,5 +58,19 @@ namespace DearHome_Backend.Controllers
             var wards = await _shippingService.GetWardsByDistrictIdAsync(districtId);
             return Ok(wards);
         }
+
+        [HttpGet("get-formatted-address/{addressId}")]
+        public async Task<IActionResult> GetFormatedAddress(Guid addressId)
+        {
+            var formatedAddress = await _shippingService.GetFormatedAddressAsync(addressId);
+            return Ok(formatedAddress);
+        }
+
+        [HttpGet("get-citys-by-code/{code}")]
+        public async Task<IActionResult> GetCitiesByCode(string code)
+        {
+            var cities = await _shippingService.GetCitiesByCodeAsync(code);
+            return Ok(cities);
+        }
     }
 }

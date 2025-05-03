@@ -20,6 +20,14 @@ namespace DearHome_Backend.Controllers
             _mapper = mapper;
         }
 
+        [HttpGet("all-customers")]
+        public async Task<IActionResult> GetAllCustomers([FromQuery] int offSet, [FromQuery] int limit)
+        {
+            var customers = await _userService.GetAllCustomersAsync(offSet, limit);
+            var customerDtos = _mapper.Map<IEnumerable<UserDto>>(customers);
+            return Ok(customerDtos);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUser(Guid id)
         {

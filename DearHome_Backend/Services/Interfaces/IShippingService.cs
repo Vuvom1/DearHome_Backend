@@ -13,6 +13,8 @@ public interface IShippingService
     Task<string> TrackShipmentAsync(string trackingNumber);
     Task<bool> UpdateShippingStatusAsync(Guid orderId, string status);
     Task<object> GetCitiesAsync();
+    Task<object> GetCitiesByCodeAsync(string code);
     Task<object> GetDistrictsByCityIdAsync(string cityId);
     Task<object> GetWardsByDistrictIdAsync(string districtId);
+    Task<object> GetFormatedAddressAsync(Guid addressId);
 }

@@ -12,5 +12,6 @@ public class VariantDto
     public bool IsActive { get; set; } = true; 
     public required string Sku { get; set; }
     public Guid ProductId { get; set; }
+    public virtual ProductDto? Product { get; set; }
     public virtual ICollection<VariantAttributeDto>? VariantAttributes { get; set; } = new List<VariantAttributeDto>();
 }

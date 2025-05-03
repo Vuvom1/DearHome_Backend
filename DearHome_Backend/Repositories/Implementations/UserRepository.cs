@@ -1,7 +1,9 @@
 using System;
+using DearHome_Backend.Constants;
 using DearHome_Backend.Data;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace DearHome_Backend.Repositories.Implementations;
@@ -9,9 +11,20 @@ namespace DearHome_Backend.Repositories.Implementations;
 public class UserRepository : BaseRepository<User>, IUserRepository
 {
     private new readonly DearHomeContext _context;
-    public UserRepository(DearHomeContext context) : base(context)
+    private readonly UserManager<User> _userManager;
+    private readonly RoleManager<IdentityRole<Guid>> _roleManager;
+    private readonly ILogger<UserRepository> _logger;
+    public UserRepository(
+        DearHomeContext context,
+        UserManager<User> userManager,
+        RoleManager<IdentityRole<Guid>> roleManager,
+        ILogger<UserRepository> logger
+    ) : base(context)
     {
         _context = context;
+        _userManager = userManager;
+        _roleManager = roleManager;
+        _logger = logger;
     }
 
     public override async Task<User?> GetByIdAsync(object id)
@@ -59,5 +72,24 @@ public class UserRepository : BaseRepository<User>, IUserRepository
         return _context.Users
             .Include(u => u.Addresses)
             .FirstOrDefaultAsync(u => u.Id == (Guid)id);
+    }
+
+    public async Task<IEnumerable<User>> GetAllCustomersAsync(int offSet, int limit)
+    {
+        var roleExists = await _roleManager.RoleExistsAsync(UserRole.User.ToString());
+        if (!roleExists)
+        {
+            _logger.LogWarning("Role {Role} does not exist.", UserRole.User.ToString());
+            return Enumerable.Empty<User>();
+        }
+        var users = await _userManager.GetUsersInRoleAsync(UserRole.User.ToString());
+        var userIds = users.Select(u => u.Id).ToList();
+
+        return await _context.Users
+            .Include(u => u.Addresses)
+            .Where(u => userIds.Contains(u.Id))
+            .Skip(offSet)
+            .Take(limit)
+            .ToListAsync();
     }
 }

@@ -25,6 +25,7 @@ public static class ServiceExtensions
         services.AddScoped<IGoodReceivedNoteService, GoodReceivedNoteService>();
         services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IPromotionService, PromotionService>();
     }
 
     public static void AddScopedRepositories(this IServiceCollection services)
@@ -42,6 +43,7 @@ public static class ServiceExtensions
         services.AddScoped<IGoodReceivedItemRepository, GoodReceivedItemRepository>();
         services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IPromotionRepository, PromotionRepository>();
     }
 
     public static void AddHttpClients(this IServiceCollection services, IConfiguration configuration)
