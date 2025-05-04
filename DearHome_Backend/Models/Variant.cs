@@ -12,7 +12,6 @@ public class Variant : BaseEntity
     public Guid ProductId { get; set; }
     public virtual Product? Product { get; set; }
     public virtual ICollection<VariantAttribute>? VariantAttributes { get; set; } = new List<VariantAttribute>();
-    public virtual ICollection<Review>? Reviews { get; set; } = new List<Review>();
     public virtual ICollection<GoodReceivedNote>? GoodReceivedNotes { get; set; } = new List<GoodReceivedNote>();
-    
+    public virtual ICollection<OrderDetail>? OrderDetails { get; set; } = new List<OrderDetail>();
 }

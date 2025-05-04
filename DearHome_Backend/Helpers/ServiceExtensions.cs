@@ -26,6 +26,7 @@ public static class ServiceExtensions
         services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPromotionService, PromotionService>();
+        services.AddScoped<IReviewService, ReviewService>();
     }
 
     public static void AddScopedRepositories(this IServiceCollection services)
@@ -44,19 +45,20 @@ public static class ServiceExtensions
         services.AddScoped<IAddressRepository, AddressRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IPromotionRepository, PromotionRepository>();
+        services.AddScoped<IReviewRepository, ReviewRepository>();
     }
 
     public static void AddHttpClients(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddHttpClient<IShippingService, ShippingService>(client =>
         {
-            client.BaseAddress = new Uri(configuration["Goship:BaseUrl"]);
+            client.BaseAddress = new Uri(configuration["Goship:BaseUrl"]!);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         });
         services.AddHttpClient<IPaymentService, PaymentService>(client =>
         {
-            client.BaseAddress = new Uri(configuration["PayOS:BaseUrl"]);
+            client.BaseAddress = new Uri(configuration["PayOS:BaseUrl"]!);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         });

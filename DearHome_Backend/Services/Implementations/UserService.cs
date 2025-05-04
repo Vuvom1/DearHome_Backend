@@ -69,7 +69,7 @@ public class UserService : IUserService
         var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         if (passwordVerificationResult != PasswordVerificationResult.Success)
         {
-            throw new InvalidOperationException("Invalid username or password.");
+        throw new InvalidOperationException("Invalid username or password.");
         }
 
         // Generate JWT token
@@ -107,7 +107,9 @@ public class UserService : IUserService
             var user = new User
             {
                 Email = userInfo.Email,
+                NormalizedEmail = userInfo.Email.ToUpper(),
                 UserName = userInfo.Email.Split('@')[0],
+                NormalizedUserName = userInfo.Email.Split('@')[0].ToUpper(),
                 Name = userInfo.Name,
                 EmailConfirmed = true,
                 ImageUrl = userInfo.Picture,

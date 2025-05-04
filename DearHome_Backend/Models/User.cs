@@ -16,4 +16,5 @@ public class User : IdentityUser<Guid>
     public virtual ICollection<Address>? Addresses { get; set; }
     public virtual ICollection<Payment>? Payments { get; set; }
     public virtual ICollection<Order>? Orders { get; set; }
+    public virtual ICollection<Review>? Reviews { get; set; }
 }

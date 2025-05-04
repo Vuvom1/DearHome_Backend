@@ -22,4 +22,13 @@ public class PaginatedResponse<T>
             ? (int)Math.Ceiling((double)totalRecords / pageSize) 
             : 0;
     }
+
+    public PaginatedResponse()
+    {
+        Data = default!;
+        PageNumber = 0;
+        PageSize = 0;
+        TotalPages = 0;
+        TotalRecords = 0;
+    }
 }

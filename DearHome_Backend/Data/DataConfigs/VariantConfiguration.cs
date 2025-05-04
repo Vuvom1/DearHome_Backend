@@ -22,10 +22,5 @@ public class VariantConfiguration : IEntityTypeConfiguration<Variant>
             .WithMany(p => p.Variants)
             .HasForeignKey(v => v.ProductId)
             .OnDelete(DeleteBehavior.NoAction);
-
-        builder.HasMany(v => v.Reviews)
-            .WithOne(r => r.Variant)
-            .HasForeignKey(r => r.VariantId)
-            .OnDelete(DeleteBehavior.Cascade);
     }
 }

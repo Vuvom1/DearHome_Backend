@@ -11,4 +11,5 @@ public class OrderDetail : BaseEntity
     public decimal TotalPrice { get; set; } = 0;
     public virtual Order? Order { get; set; }
     public virtual Variant? Variant { get; set; }
+    public virtual ICollection<Review>? Reviews { get; set; } = new List<Review>();
 }

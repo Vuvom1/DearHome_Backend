@@ -130,4 +130,21 @@ public class OrderRepository : BaseRepository<Order>, IOrderRepository
 
         return new PaginatedResponse<IEnumerable<Order>>(orders, pageNumber, pageSize, totalRecords);
     }
+
+    public override async Task<Order?> GetByIdAsync(object id)
+    {
+        var order = await _context.Orders
+            .Include(o => o.OrderDetails!)
+                .ThenInclude(od => od.Variant)
+                .ThenInclude(v => v!.Product)
+                .ThenInclude(p => p!.Category)
+            .Include(o => o.OrderDetails!)
+                .ThenInclude(od => od.Reviews)
+            .Include(o => o.User)
+            .Include(o => o.Address)
+            .Include(o => o.Promotion)
+            .FirstOrDefaultAsync(o => o.Id == (Guid)id);
+
+        return order;
+    }
 }

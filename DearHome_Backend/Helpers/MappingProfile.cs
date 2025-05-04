@@ -13,6 +13,7 @@ using DearHome_Backend.DTOs.OrderDtos;
 using DearHome_Backend.DTOs.PlacementDtos;
 using DearHome_Backend.DTOs.ProductDtos;
 using DearHome_Backend.DTOs.PromotionDtos;
+using DearHome_Backend.DTOs.ReviewDtos;
 using DearHome_Backend.DTOs.UserDtos;
 using DearHome_Backend.DTOs.VariantAttributeDtos;
 using DearHome_Backend.DTOs.VariantDtos;
@@ -84,5 +85,9 @@ public class MappingProfile : Profile
         CreateMap<Promotion, PromotionDto>();
         CreateMap<AddPromotionDto, Promotion>();
         CreateMap<UpdatePromotionDto, Promotion>();
+
+        CreateMap<Review, ReviewDto>();
+        CreateMap<AddReviewDto, Review>();
+        CreateMap<UpdateReviewDto, Review>();
     }
 }

@@ -25,6 +25,5 @@ public class Order : BaseEntity
     public string? PaymentLinkId { get; set; }
     public string? PaymentLinkUrl { get; set; }
     public virtual ICollection<OrderDetail>? OrderDetails { get; set; }
-    
-    
+
 }
