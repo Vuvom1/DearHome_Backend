@@ -95,6 +95,15 @@ public class UserService : IUserService
                 throw new InvalidOperationException("Failed to retrieve user information from Google.");
             }
 
+            // Check if the user already exists
+            var existingUser = await _userManager.FindByEmailAsync(userInfo.Email);
+            if (existingUser != null)
+            {
+                // Generate JWT token for existing user
+                var existingUserToken = GenerateToken(existingUser);
+                return existingUserToken;
+            }
+
             var user = new User
             {
                 Email = userInfo.Email,
@@ -106,14 +115,7 @@ public class UserService : IUserService
                 PhoneNumber = "N/A", // Provide a default value for PhoneNumber
             };
 
-            // Check if the user already exists
-            var existingUser = await _userManager.FindByEmailAsync(user.Email);
-            if (existingUser != null)
-            {
-                // Generate JWT token for existing user
-                var existingUserToken = GenerateToken(existingUser);
-                return existingUserToken;
-            }
+            
 
             // Create a new user if it doesn't exist
             var result = await _userManager.CreateAsync(user, "DefaultPassword123!"); // Use a default password or generate one
@@ -324,5 +326,26 @@ public class UserService : IUserService
     public Task<IEnumerable<User>> GetAllCustomersAsync(int offSet, int limit)
     {
         return _userRepository.GetAllCustomersAsync(offSet, limit);
+    }
+
+    public async Task LogoutAsync(string token)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var jwtToken = handler.ReadJwtToken(token);
+        var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+
+        if (userIdClaim != null)
+        {
+            var userId = Guid.Parse(userIdClaim.Value);
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+
+            if (user != null)
+            {
+                // Invalidate the token by updating the user's security stamp
+                user.SecurityStamp = Guid.NewGuid().ToString();
+                await _userManager.UpdateAsync(user);
+            }
+        }
+        
     }
 }

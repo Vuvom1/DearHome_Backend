@@ -161,7 +161,7 @@ public class PaymentService : IPaymentService
     {
         if (verifyPaymentDto.Status == "PAID") {
             // Update order status to "Paid"
-            await _orderRepository.UpdateOrderStatusByPaymentOrderCodeAsync(verifyPaymentDto.OrderCode, OrderStatus.Paid);
+            await _orderRepository.UpdateOrderStatusByPaymentOrderCodeAsync(verifyPaymentDto.OrderCode, OrderStatus.Processing);
         }
         else if (verifyPaymentDto.Status == "CANCELLED")
         {

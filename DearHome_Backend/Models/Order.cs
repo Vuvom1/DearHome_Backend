@@ -10,7 +10,7 @@ public class Order : BaseEntity
     public virtual User? User { get; set; }
     public Guid AddressId { get; set; }
     public virtual Address? Address { get; set; }
-    public OrderStatus Status { get; set; } = OrderStatus.Pending;
+    public OrderStatus Status { get; set; } = OrderStatus.Placed;
     public decimal TotalPrice { get; set; } = 0;
     public decimal Discount { get; set; } = 0;
     public decimal FinalPrice { get; set; } = 0;

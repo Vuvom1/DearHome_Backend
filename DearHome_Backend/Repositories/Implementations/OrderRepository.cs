@@ -1,6 +1,7 @@
 using System;
 using DearHome_Backend.Constants;
 using DearHome_Backend.Data;
+using DearHome_Backend.DTOs.PaginationDtos;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -68,5 +69,65 @@ public class OrderRepository : BaseRepository<Order>, IOrderRepository
             .Select(o => o.PromotionId!.Value)
             .Distinct()
             .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Order>> GetOrdersByUserIdAsync(Guid userId, int offSet, int limit)
+    {
+        return await _context.Orders
+            .Include(o => o.OrderDetails!)
+                .ThenInclude(od => od.Variant)
+                .ThenInclude(v => v!.Product)
+                .ThenInclude(p => p!.Category)
+            .Include(o => o.User)
+            .Include(o => o.Address)
+            .Where(o => o.UserId == userId)
+            .Skip(offSet)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Order>> GetOrdersByUserIdAndStatusAsync(Guid userId, OrderStatus status, int offSet, int limit)
+    {
+        return await _context.Orders
+            .Include(o => o.OrderDetails!)
+                .ThenInclude(od => od.Variant)
+                .ThenInclude(v => v!.Product)
+                .ThenInclude(p => p!.Category)
+            .Include(o => o.User)
+            .Include(o => o.Address)
+            .Include(o => o.Promotion)
+            .Where(o => o.UserId == userId && o.Status == status)
+            .Skip(offSet)
+            .Take(limit)
+            .ToListAsync();
+    }
+
+    public async Task<PaginatedResponse<IEnumerable<Order>>> GetAllAsync(int pageNumber, int pageSize, string? searchString = null)
+    {
+
+        IQueryable<Order> query = _context.Orders;
+
+        if (!string.IsNullOrEmpty(searchString))
+        {
+            query = query.Where(o => (o.User != null && o.User.Name != null && o.User.Name.Contains(searchString)) || 
+                                     (o.User != null && o.User.Email != null && o.User.Email.Contains(searchString)));
+        }
+
+        query = query.Include(o => o.OrderDetails!)
+                .ThenInclude(od => od.Variant)
+                .ThenInclude(v => v!.Product)
+                .ThenInclude(p => p!.Category)
+            .Include(o => o.User)
+            .Include(o => o.Address);
+
+        var totalRecords = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+        var orders = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PaginatedResponse<IEnumerable<Order>>(orders, pageNumber, pageSize, totalRecords);
     }
 }

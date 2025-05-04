@@ -23,7 +23,16 @@ namespace DearHome_Backend.Controllers
         public async Task<IActionResult> GetAll()
         {
             var products = await _productService.GetAllAsync();
-            return Ok(products);
+            var productDtos = _mapper.Map<IEnumerable<ProductDto>>(products);
+            return Ok(productDtos);
+        }
+
+        [HttpGet("top-sales")]
+        public async Task<IActionResult> GetTopSalesProducts([FromQuery]int count)
+        {
+            var products = await _productService.GetTopSalesProductsAsync(count);
+            var productDtos = _mapper.Map<IEnumerable<ProductDto>>(products);
+            return Ok(productDtos);
         }
 
         [HttpGet("get-by-category/{id}")]

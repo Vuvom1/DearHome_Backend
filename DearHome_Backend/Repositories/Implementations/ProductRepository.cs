@@ -48,6 +48,30 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
             .Include(p => p.Variants)
             .Include(p => p.AttributeValues)
             .Where(p => p.CategoryId == id)
+            .Include(p => p.Category)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Product>> GetTopSalesProductsAsync(int count)
+    {
+        var topSaleProductIds = await _context.OrderDetails
+            .Where(od => od.Variant != null && od.Variant.Product != null)
+            .GroupBy(od => od.Variant!.ProductId)
+            .Select(g => new
+            {
+                ProductId = g.Key,
+                TotalSales = g.Sum(od => od.Quantity)
+            })
+            .Where(g => g.TotalSales > 0)
+            .OrderByDescending(g => g.TotalSales)
+            .Take(count)
+            .Select(g => g.ProductId)  // Extract just the IDs
+            .ToListAsync();
+        
+        return await _context.Products
+            .Include(p => p.Category)
+            .Include(p => p.Placement)
+            .Where(p => topSaleProductIds.Contains(p.Id))  // Use Contains instead of Any
             .ToListAsync();
     }
 }

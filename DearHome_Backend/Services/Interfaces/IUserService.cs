@@ -10,6 +10,7 @@ public interface IUserService
     Task<string> LoginAsync(string userName, string password);
     Task<string> LoginWithGoogleAsync(string accessToken);
     Task<User> RegisterAsync(User user, string password, string verificationCode);
+    Task LogoutAsync(string token);
     Task SendVerificationCodeAsync(string email);
     Task UpdateAsync(User user);
 

@@ -40,4 +40,9 @@ public class ProductService : BaseService<Product>, IProductService
     {
         return _productRepository.GetByIdWithAttributeValuesAndVariantsAsync(id);
     }
+
+    public async Task<IEnumerable<Product>> GetTopSalesProductsAsync(int count)
+    {
+        return await _productRepository.GetTopSalesProductsAsync(count);
+    }
 }

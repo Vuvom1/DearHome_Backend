@@ -540,7 +540,9 @@ public class ShippingService : IShippingService
             address.Street,
             city,
             district,
-            ward
+            ward, 
+            address.PostalCode,   
+            address.Country,
         };
         return formatedAddress;
     }

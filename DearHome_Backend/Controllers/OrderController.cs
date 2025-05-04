@@ -25,11 +25,11 @@ namespace DearHome_Backend.Controllers
         }
 
         [HttpGet] 
-        public async Task<IActionResult> GetAllOrders([FromQuery] int offSet = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllOrders([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchString = null)
         {
-            var orders = await _orderService.GetAllAsync(offSet, pageSize);
-            var orderDtos = _mapper.Map<IEnumerable<OrderDto>>(orders);
-            return Ok(orderDtos);
+            var orders = await _orderService.GetAllAsync(pageNumber, pageSize, searchString);
+            
+            return Ok(orders);
         }
 
         [HttpPost("create")]
@@ -68,6 +68,22 @@ namespace DearHome_Backend.Controllers
         {
             await _orderService.UpdateOrderStatusAsync(id, status);
             return Ok("Order status updated successfully.");
+        }
+
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetOrdersByUserId(Guid userId, [FromQuery] int offSet = 1, [FromQuery] int limit = 10)
+        {
+            var orders = await _orderService.GetOrdersByUserIdAsync(userId, offSet, limit);
+            var orderDtos = _mapper.Map<IEnumerable<OrderDto>>(orders);
+            return Ok(orderDtos);
+        }
+
+        [HttpGet("user-and-status/{userId}")]
+        public async Task<IActionResult> GetOrdersByUserIdAndStatus(Guid userId, [FromQuery]OrderStatus status, [FromQuery] int offSet = 1, [FromQuery] int limit = 10)
+        {
+            var orders = await _orderService.GetOrdersByUserIdAndStatusAsync(userId, status, offSet, limit);
+            var orderDtos = _mapper.Map<IEnumerable<OrderDto>>(orders);
+            return Ok(orderDtos);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using DearHome_Backend.Constants;
+using DearHome_Backend.DTOs.PaginationDtos;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
 using DearHome_Backend.Services.Inplementations;
@@ -68,9 +69,21 @@ public class OrderService : BaseService<Order>, IOrderService
         return createdOrder;
     }
 
-    public Task<IEnumerable<Order>> GetAllAsync(int offSet, int limit)
+    public async Task<PaginatedResponse<IEnumerable<Order>>> GetAllAsync(int pageNumber, int pageSize, string? searchString = null)
     {
-        return _orderRepository.GetAllAsync(offSet, limit);
+        var paginatedResponse = await _orderRepository.GetAllAsync(pageNumber, pageSize, searchString);
+
+        return paginatedResponse;
+    }
+
+    public Task<IEnumerable<Order>> GetOrdersByUserIdAndStatusAsync(Guid userId, OrderStatus status, int offSet, int limit)
+    {
+        return _orderRepository.GetOrdersByUserIdAndStatusAsync(userId, status, offSet, limit);
+    }
+
+    public Task<IEnumerable<Order>> GetOrdersByUserIdAsync(Guid userId, int offSet, int limit)
+    {
+        return _orderRepository.GetOrdersByUserIdAsync(userId, offSet, limit);
     }
 
     public async Task UpdateOrderStatusAsync(Guid orderId, OrderStatus status)
@@ -103,8 +116,10 @@ public class OrderService : BaseService<Order>, IOrderService
             var promotion = await _orderRepository.GetByIdAsync(order.PromotionId!);
             if (promotion != null)
             {
-                FinalPrice -= FinalPrice * promotion.Discount / 100 ;
+                order.Discount = FinalPrice * promotion.Discount / 100;
+                FinalPrice -= order.Discount;
             }
+            
         }
 
         if (order.ShippingRate != null) {

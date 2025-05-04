@@ -68,6 +68,18 @@ namespace DearHome_Backend.Controllers
                 return Ok("User registered successfully."); 
         }
 
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return BadRequest("Token is required.");
+            }
+
+            await _userService.LogoutAsync(token);
+            return Ok("User logged out successfully.");
+        }
+
         [HttpPost("send-verification-code")]
         public async Task<IActionResult> SendVerificationCode([FromBody] VerificationCodeDto verificationCodeDto)
         {

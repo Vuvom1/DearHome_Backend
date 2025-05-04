@@ -2,11 +2,11 @@ namespace DearHome_Backend.Constants;
 
 public enum OrderStatus
 {
+    Placed, 
     WaitForPayment,
-    Paid,
-    Pending,
-    Processing,
-    Shipped,
+    Processing, 
+    Shipping,
     Delivered,
-    Cancelled
+    Completed,
+    Cancelled,
 }
