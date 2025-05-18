@@ -29,6 +29,14 @@ namespace DearHome_Backend.Controllers
             return Ok(categoryDtos);
         }
 
+        [HttpGet("parent-categories")]
+        public async Task<IActionResult> GetAllParentCategories()
+        {
+            var categories = await _categoryService.GetAllParentCategories();
+            var categoryDtos = _mapper.Map<List<CategoryDto>>(categories);
+            return Ok(categoryDtos);
+        }   
+
         [HttpGet("get-by-slug/{slug}")]
         public async Task<IActionResult> GetCategoryBySlug(string slug)
         {

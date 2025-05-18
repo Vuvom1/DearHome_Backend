@@ -15,4 +15,10 @@ public interface IOrderRepository : IBaseRepository<Order>
     Task UpdateOrderStatusByIdAsync(Guid orderId, OrderStatus status);  
     Task<bool> IsPromotionUsedByUserId(Guid userId, Guid promotionId);
     Task<IEnumerable<Guid>> GetUsedPromotionIdsByUserId(Guid userId);
+    Task<IEnumerable<KeyValuePair<string, decimal>>> GetDailySalesAsync(DateTime startDate, DateTime endDate);
+    Task<IEnumerable<KeyValuePair<string, decimal>>> GetMonthlySalesAsync(DateTime startDate, DateTime endDate);
+    Task<IEnumerable<KeyValuePair<string, decimal>>> GetYearlySalesAsync(DateTime startDate, DateTime endDate);
+    Task<IEnumerable<KeyValuePair<string, decimal>>> GetDailyOrderCountsAsync(DateTime startDate, DateTime endDate);
+    Task<IEnumerable<KeyValuePair<string, decimal>>> GetMonthlyOrderCountsAsync(DateTime startDate, DateTime endDate);
+    Task<IEnumerable<KeyValuePair<string, decimal>>> GetYearlyOrderCountsAsync(DateTime startDate, DateTime endDate);
 }

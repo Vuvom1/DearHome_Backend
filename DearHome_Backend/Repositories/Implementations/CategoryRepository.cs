@@ -69,4 +69,14 @@ public class CategoryRepository : BaseRepository<Category>, ICategoryRepository
     
         return category;
     }
+
+    public async Task<IEnumerable<Category>> GetAllParentCategories()
+    {
+        return await _context.Categories
+            .Where(c => c.ParentCategoryId == null)
+            .Include(c => c.SubCategories)
+            .Include(c => c.CategoryAttributes!)
+                .ThenInclude(ca => ca.Attribute!)
+            .ToListAsync();
+    }
 }

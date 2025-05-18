@@ -147,4 +147,58 @@ public class OrderRepository : BaseRepository<Order>, IOrderRepository
 
         return order;
     }
+
+    public async Task<IEnumerable<KeyValuePair<string, decimal>>> GetDailySalesAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _context.Orders
+            .Where(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate && o.Status == OrderStatus.Completed)
+            .GroupBy(o => o.CreatedAt.Date)
+            .Select(g => new KeyValuePair<string, decimal>(g.Key.ToString(), g.Sum(o => o.TotalPrice - o.Discount)))
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<KeyValuePair<string, decimal>>> GetMonthlySalesAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _context.Orders
+            .Where(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate && o.Status == OrderStatus.Completed)
+            .GroupBy(o =>  new { o.CreatedAt.Year, o.CreatedAt.Month })
+            .Select(g => new KeyValuePair<string, decimal>($"{g.Key.Year}-{g.Key.Month}", g.Sum(o => o.TotalPrice - o.Discount)))
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<KeyValuePair<string, decimal>>> GetYearlySalesAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _context.Orders
+            .Where(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate && o.Status == OrderStatus.Completed)
+            .GroupBy(o => o.CreatedAt.Year)
+            .Select(g => new KeyValuePair<string, decimal>(g.Key.ToString(), g.Sum(o => o.TotalPrice - o.Discount)))
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<KeyValuePair<string, decimal>>> GetDailyOrderCountsAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _context.Orders
+            .Where(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate)
+            .GroupBy(o => o.CreatedAt.Date)
+            .Select(g => new KeyValuePair<string, decimal>(g.Key.ToString(), g.Count()))
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<KeyValuePair<string, decimal>>> GetMonthlyOrderCountsAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _context.Orders
+            .Where(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate)
+            .GroupBy(o => new { o.CreatedAt.Year, o.CreatedAt.Month })
+            .Select(g => new KeyValuePair<string, decimal>($"{g.Key.Year}-{g.Key.Month}", g.Count()))
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<KeyValuePair<string, decimal>>> GetYearlyOrderCountsAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _context.Orders
+            .Where(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate)
+            .GroupBy(o => o.CreatedAt.Year)
+            .Select(g => new KeyValuePair<string, decimal>(g.Key.ToString(), g.Count()))
+            .ToListAsync();
+    }
 }

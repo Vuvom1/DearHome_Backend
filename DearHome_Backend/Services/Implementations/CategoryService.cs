@@ -39,4 +39,9 @@ public class CategoryService : BaseService<Category>, ICategoryService
     {
         return _categoryRepository.GetCategoryBySlug(slug);
     }
+
+    public Task<IEnumerable<Category>> GetAllParentCategories()
+    {
+        return _categoryRepository.GetAllParentCategories();
+    }
 }

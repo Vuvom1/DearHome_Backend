@@ -18,6 +18,7 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
     {
         return await _context.Products
             .Include(p => p.Category)
+            .Include(p => p.Placement)
             .ToListAsync();
     }
 

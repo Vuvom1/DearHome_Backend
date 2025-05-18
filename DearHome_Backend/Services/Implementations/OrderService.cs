@@ -76,6 +76,41 @@ public class OrderService : BaseService<Order>, IOrderService
         return paginatedResponse;
     }
 
+    public Task<IEnumerable<KeyValuePair<string, decimal>>> GetOrderCountsAsync(StatsPeriod period, DateTime? startDate, DateTime? endDate)
+    {
+        if (period == StatsPeriod.Daily)
+        {
+            if (startDate == null || endDate == null)
+            {
+                startDate = DateTime.Now.Date.AddDays(-30);    
+                endDate = DateTime.Now.Date;
+            }
+            return _orderRepository.GetDailyOrderCountsAsync(startDate.Value, endDate.Value);
+        }
+        else if (period == StatsPeriod.Monthly)
+        {
+            if (startDate == null || endDate == null)
+            {
+                startDate = DateTime.Now.Date.AddMonths(-12);    
+                endDate = DateTime.Now.Date;
+            }
+            return _orderRepository.GetMonthlyOrderCountsAsync(startDate.Value, endDate.Value);
+        }
+        else if (period == StatsPeriod.Yearly)
+        {
+            if (startDate == null || endDate == null)
+            {
+                startDate = DateTime.Now.Date.AddYears(-5);    
+                endDate = DateTime.Now.Date;
+            }
+            return _orderRepository.GetYearlyOrderCountsAsync(startDate.Value, endDate.Value);
+        }
+        else
+        {
+            throw new ArgumentException("Invalid period specified.");
+        }
+    }
+
     public Task<IEnumerable<Order>> GetOrdersByUserIdAndStatusAsync(Guid userId, OrderStatus status, int offSet, int limit)
     {
         return _orderRepository.GetOrdersByUserIdAndStatusAsync(userId, status, offSet, limit);
@@ -85,6 +120,43 @@ public class OrderService : BaseService<Order>, IOrderService
     {
         return _orderRepository.GetOrdersByUserIdAsync(userId, offSet, limit);
     }
+
+    public Task<IEnumerable<KeyValuePair<string, decimal>>> GetSalesStatsByPeriodAsync(StatsPeriod period, DateTime? startDate, DateTime? endDate)
+    {
+        if (period == StatsPeriod.Daily)
+        {
+            if (startDate == null || endDate == null)
+            {
+                startDate = DateTime.Now.Date.AddDays(-30);    
+                endDate = DateTime.Now.Date;
+            }
+            return _orderRepository.GetDailySalesAsync(startDate.Value, endDate.Value);
+        }
+        else if (period == StatsPeriod.Monthly)
+        {
+            if (startDate == null || endDate == null)
+            {
+                startDate = DateTime.Now.Date.AddMonths(-12);    
+                endDate = DateTime.Now.Date;
+            }
+            return _orderRepository.GetMonthlySalesAsync(startDate.Value, endDate.Value);
+        }
+        else if (period == StatsPeriod.Yearly)
+        {
+            if (startDate == null || endDate == null)
+            {
+                startDate = DateTime.Now.Date.AddYears(-5);    
+                endDate = DateTime.Now.Date;
+            }
+            return _orderRepository.GetYearlySalesAsync(startDate.Value, endDate.Value);
+        }
+        else
+        {
+            throw new ArgumentException("Invalid period specified.");
+        }
+    }
+
+    
 
     public async Task UpdateOrderStatusAsync(Guid orderId, OrderStatus status)
     {
