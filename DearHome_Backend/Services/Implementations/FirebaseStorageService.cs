@@ -7,25 +7,28 @@ namespace DearHome_Backend.Services.Implementations;
 
 public class FirebaseStorageService : IFirebaseStorageService
 {
-    private static readonly string _bucket = "makemyhome-27df4.appspot.com";
+    private readonly string _bucket = "makemyhome-27df4.appspot.com";
+    private readonly string _apiKey;
 
-    public FirebaseStorageService()
+    public FirebaseStorageService(IConfiguration configuration)
     {
-        
+        _bucket = configuration["Firebase:StorageBucket"] ?? _bucket;
+        _apiKey = configuration["Firebase:ApiKey"] ?? string.Empty;
     }
+
     public async Task<string> UploadImageAsync(IFormFile imageFile)
     {
-        var stream = imageFile.OpenReadStream();
+        try
+        {
+            using var stream = imageFile.OpenReadStream();
             var fileName = Path.GetRandomFileName();
 
-            var uid = Guid.NewGuid().ToString();
-            var customToken = await FirebaseAuth.DefaultInstance.CreateCustomTokenAsync(uid);
-
+            // Create storage reference with proper authentication
             var storage = new FirebaseStorage(
                 _bucket,
                 new FirebaseStorageOptions
                 {
-                    AuthTokenAsyncFactory = () => Task.FromResult(customToken),
+                    AuthTokenAsyncFactory = () => GetFirebaseToken(),
                     ThrowOnCancel = true
                 });
 
@@ -36,11 +39,16 @@ public class FirebaseStorageService : IFirebaseStorageService
 
             var downloadUrl = await task;
             return downloadUrl;
+        }
+        catch (Exception ex)
+        {
+            throw new ApplicationException($"Error uploading image to Firebase Storage: {ex.Message}", ex);
+        }
     }
 
     public async Task<string> UpdateImageAsync(IFormFile imageFile, string imageUrl)
     {
-         var uri = new Uri(imageUrl);
+        var uri = new Uri(imageUrl);
         var fileName = Path.GetFileName(uri.LocalPath);
 
         // Delete the existing image
@@ -84,5 +92,18 @@ public class FirebaseStorageService : IFirebaseStorageService
             .Child("Images")
             .Child(fileName)
             .DeleteAsync();
+    }
+    
+    private async Task<string> GetFirebaseToken()
+    {
+        try
+        {
+            // Using a service account with proper permissions
+            return await FirebaseAuth.DefaultInstance.CreateCustomTokenAsync("firebase-storage-admin");
+        }
+        catch (Exception ex)
+        {
+            throw new ApplicationException($"Error generating Firebase token: {ex.Message}", ex);
+        }
     }
 }

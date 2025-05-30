@@ -1,5 +1,6 @@
 using System;
 using DearHome_Backend.Data;
+using DearHome_Backend.DTOs.StatsDtos;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -57,16 +58,16 @@ public class CategoryRepository : BaseRepository<Category>, ICategoryRepository
     {
         var category = await _context.Categories
             .Include(c => c.ParentCategory)
-            .Include(c=>c.SubCategories)
+            .Include(c => c.SubCategories)
             .Include(c => c.CategoryAttributes!)
                 .ThenInclude(ca => ca.Attribute!)
             .FirstOrDefaultAsync(c => c.Slug == slug);
-    
+
         if (category == null)
         {
             throw new InvalidOperationException($"Category with slug '{slug}' not found.");
         }
-    
+
         return category;
     }
 
@@ -77,6 +78,31 @@ public class CategoryRepository : BaseRepository<Category>, ICategoryRepository
             .Include(c => c.SubCategories)
             .Include(c => c.CategoryAttributes!)
                 .ThenInclude(ca => ca.Attribute!)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<CategoryWithStockAndPercentage>> GetCategoriesWithTotalStockAndPercentageAsync()
+    {
+    return await _context.Categories
+            .Where(c => c.ParentCategoryId == null)
+            .Include(c => c.Products!)
+                .ThenInclude(ca => ca.Variants!)
+            .Include(c => c.SubCategories)
+            
+            .Select(c => new CategoryWithStockAndPercentage
+            {
+                Id = c.Id,
+                CategoryName = c.Name,
+                Percentage = Math.Round(c.Products!.Sum(p => p.Variants!.Sum(v => v.Stock)) / (decimal)_context.Products.Sum(p => p.Variants!.Sum(v => v.Stock)) * 100, 2),
+                StockAmount = c.Products!.Sum(p => p.Variants!.Sum(v => v.Stock)),
+                SubCategories = c.SubCategories!.Select(sc => new SubCategoryStock
+                {
+                    Id = sc.Id,
+                    Name = sc.Name,
+                    StockAmount = sc.Products!.Sum(p => p.Variants!.Sum(v => v.Stock)),
+                    Percentage = Math.Round(sc.Products!.Sum(p => p.Variants!.Sum(v => v.Stock)) / (decimal)_context.Products.Sum(p => p.Variants!.Sum(v => v.Stock)) * 100, 2)
+                }).ToList()
+            })
             .ToListAsync();
     }
 }

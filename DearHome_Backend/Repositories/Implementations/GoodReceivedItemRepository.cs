@@ -7,7 +7,7 @@ namespace DearHome_Backend.Repositories.Implementations;
 
 public class GoodReceivedItemRepository : BaseRepository<GoodReceivedItem>, IGoodReceivedItemRepository
 {
-    private readonly DearHomeContext _context;
+    private new readonly DearHomeContext _context;
 
     public GoodReceivedItemRepository(DearHomeContext context) : base(context)
     {

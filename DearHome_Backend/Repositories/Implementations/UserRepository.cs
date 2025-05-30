@@ -92,4 +92,16 @@ public class UserRepository : BaseRepository<User>, IUserRepository
             .Take(limit)
             .ToListAsync();
     }
+
+    public async Task<int> GetTotalCustomersCountAsync()
+    {
+        var roleExists = await _roleManager.RoleExistsAsync(UserRole.User.ToString());
+        if (!roleExists)
+        {
+            _logger.LogWarning("Role {Role} does not exist.", UserRole.User.ToString());
+            return 0;
+        }
+        var users = await _userManager.GetUsersInRoleAsync(UserRole.User.ToString());
+        return users.Count;
+    }
 }

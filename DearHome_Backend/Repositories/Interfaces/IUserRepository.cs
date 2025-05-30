@@ -7,6 +7,7 @@ public interface IUserRepository : IBaseRepository<User>
 {
     Task<User?> GetByIdWithAddressesAsync(Guid id);
     Task<IEnumerable<User>> GetAllCustomersAsync(int offSet, int limit);
+    Task<int> GetTotalCustomersCountAsync();
     Task<bool> IsUserNameExistsAsync(string userName);
     Task<bool> IsEmailExistsAsync(string email);
     Task<bool> IsPhoneNumberExistsAsync(string phoneNumber);

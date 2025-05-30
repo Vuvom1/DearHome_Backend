@@ -1,6 +1,7 @@
 using System;
 using DearHome_Backend.Constants;
 using DearHome_Backend.Data;
+using DearHome_Backend.DTOs.StatsDtos;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -75,5 +76,39 @@ public class PromotionRepository : BaseRepository<Promotion>, IPromotionReposito
             .Where(p => p.CustomerLevel == customerLevel && p.Type == PromotionType.Order).ToListAsync();
 
         return usablePromotions;
+    }
+
+    public async Task<decimal> GetTotalDiscountAmountByOrdersAsync(DateTime startDate, DateTime endDate)
+    {
+        var totalDiscount = await _context.Promotions
+            .Where(p => p.StartDate >= startDate && p.EndDate <= endDate)
+            .Include(p => p.Orders)
+            .SelectMany(p => p.Orders!)
+            .Where(o => o.PromotionId != null)
+            .SumAsync(o => o.Discount);
+
+        return totalDiscount;
+    }
+
+    public async Task<int> GetTotalDiscountedOrdersCountAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _context.Orders
+            .Where(o => o.PromotionId != null && o.CreatedAt >= startDate && o.CreatedAt <= endDate)
+            .CountAsync();
+    }
+
+    public async Task<IEnumerable<PromotionInfo>> GetPromotionsWithDiscountedAmountsAndOrdersCountAsync(DateTime startDate, DateTime endDate)
+    {
+    return await _context.Promotions
+            .Where(p => p.StartDate >= startDate && p.EndDate <= endDate)
+            .Select(p => new PromotionInfo  
+            {
+                PromotionId = p.Id,
+                PromotionName = p.Name,
+                DiscountedAmount = p.Orders!.Sum(o => o.Discount),
+                DiscountedOrdersCount = p.Orders!.Count(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate)
+                
+            })
+            .ToListAsync();
     }
 }

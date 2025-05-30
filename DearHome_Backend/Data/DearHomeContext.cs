@@ -83,7 +83,13 @@ public class DearHomeContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
                 Email = "admin@gmail.com",
                 Name = "Admin User",
                 PhoneNumber = "1234567890",
-                PasswordHash = new PasswordHasher<User>().HashPassword(null, "Admin@123"),
+                PasswordHash = new PasswordHasher<User>().HashPassword(new User
+                {
+                    Name = "Admin User",
+                    UserName = "admin",
+                    NormalizedUserName = "ADMIN",
+                    Email = "admin@gmail.com"
+                }, "Admin@123"),
             }
         );
 

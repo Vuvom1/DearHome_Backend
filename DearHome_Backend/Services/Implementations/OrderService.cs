@@ -156,7 +156,10 @@ public class OrderService : BaseService<Order>, IOrderService
         }
     }
 
-    
+    public async Task<int> GetTotalOrdersCountAsync()
+    {
+        return await _orderRepository.GetTotalOrdersCountAsync();
+    }
 
     public async Task UpdateOrderStatusAsync(Guid orderId, OrderStatus status)
     {

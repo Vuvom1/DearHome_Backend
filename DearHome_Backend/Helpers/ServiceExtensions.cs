@@ -6,6 +6,7 @@ using DearHome_Backend.Repositories.Implementations;
 using Microsoft.AspNetCore.Identity;
 using DearHome_Backend.Services.Implementations;
 using DearHome_Backend.Models;
+using DearHome_Backend.Services;
 
 namespace DearHome_Backend.Helpers;
 
@@ -27,6 +28,7 @@ public static class ServiceExtensions
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IPromotionService, PromotionService>();
         services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<IStatisticService, StatisticService>();
     }
 
     public static void AddScopedRepositories(this IServiceCollection services)

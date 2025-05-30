@@ -10,10 +10,14 @@ namespace DearHome_Backend.Controllers
     public class StatsController : ControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly IUserService _userService;
+        private readonly IStatisticService _statisticService;
 
-        public StatsController(IOrderService orderService)
+        public StatsController(IOrderService orderService, IUserService userService, IStatisticService statisticService)
         {
             _orderService = orderService;
+            _userService = userService;
+            _statisticService = statisticService;
         }
 
         [HttpGet("sales")]
@@ -28,6 +32,41 @@ namespace DearHome_Backend.Controllers
         {
             var orderCounts = await _orderService.GetOrderCountsAsync(period, startDate, endDate);
             return Ok(orderCounts);
+        }
+
+        [HttpGet("overall")]
+        public async Task<IActionResult> GetOverallStats()
+        {
+            var overallStats = await _statisticService.GetOverallStatsAsync();
+            return Ok(overallStats);
+        }
+
+        [HttpGet("top-sales-products")]
+        public async Task<IActionResult> GetTopSalesProducts([FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int count)
+        {
+            var topSalesProducts = await _statisticService.GetTopSalesProductsAsync(startDate, endDate, count);
+            return Ok(topSalesProducts);
+        }
+
+        [HttpGet("order-status-percentage")]
+        public async Task<IActionResult> GetOrderStatusPercentage()
+        {
+            var orderStatusPercentage = await _statisticService.GetOrderStatusPercentageAsync();
+            return Ok(orderStatusPercentage);
+        }
+
+        [HttpGet("categories-stock")]
+        public async Task<IActionResult> GetCategoriesWithProductStockAndPercentage()
+        {
+            var categoriesWithStock = await _statisticService.GetCategoriesAndStockAmountsWithPercentagesAsync();
+            return Ok(categoriesWithStock);
+        }
+
+        [HttpGet("promotion-statistics")]
+        public async Task<IActionResult> GetPromotionStatistics([FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            var promotionStats = await _statisticService.GetPromotionStatisticsAsync(startDate, endDate);
+            return Ok(promotionStats);
         }
     }
 }

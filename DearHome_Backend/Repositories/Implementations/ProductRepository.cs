@@ -68,11 +68,50 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
             .Take(count)
             .Select(g => g.ProductId)  // Extract just the IDs
             .ToListAsync();
-        
+
         return await _context.Products
             .Include(p => p.Category)
             .Include(p => p.Placement)
             .Where(p => topSaleProductIds.Contains(p.Id))  // Use Contains instead of Any
             .ToListAsync();
+    }
+
+    public async Task<int> GetTotalProductsCountAsync()
+    {
+        return await _context.Products.CountAsync();
+    }
+
+    public async Task<IEnumerable<KeyValuePair<Product, decimal>>> GetTopSalesProductsWithAmountsAsync(DateTime startDate, DateTime endDate, int count)
+    {
+        var results = await _context.OrderDetails
+            .Where(od => od.Variant != null && od.Order != null && od.Order.OrderDate >= startDate && od.Order.OrderDate <= endDate)
+            .GroupBy(od => od.Variant!.Product)
+            .Select(g => new
+            {
+                Product = g.Key!,
+                TotalAmount = g.Sum(od => od.TotalPrice)
+            })
+            .OrderByDescending(x => x.TotalAmount)
+            .Take(count)
+            .ToListAsync();
+
+        return results.Select(r => new KeyValuePair<Product, decimal>(r.Product, r.TotalAmount));
+    }
+
+    public async Task<IEnumerable<KeyValuePair<Product, int>>> GetTopSalesProductsWithCountsAsync(DateTime startDate, DateTime endDate, int count)
+    {
+        var results = await _context.OrderDetails
+            .Where(od => od.Variant != null && od.Order != null && od.Order.OrderDate >= startDate && od.Order.OrderDate <= endDate)
+            .GroupBy(od => od.Variant!.Product)
+            .Select(g => new
+            {
+                Product = g.Key!,
+                TotalCount = g.Sum(od => od.Quantity)
+            })
+            .OrderByDescending(x => x.TotalCount)
+            .Take(count)
+            .ToListAsync();
+
+        return results.Select(r => new KeyValuePair<Product, int>(r.Product, r.TotalCount));
     }
 }

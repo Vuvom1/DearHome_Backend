@@ -41,15 +41,20 @@ public class ShippingService : IShippingService
         _telemetryClient = telemetryClient ?? throw new ArgumentNullException(nameof(telemetryClient));
 
         // Set the base address for the HttpClient
-        _httpClient.BaseAddress = new Uri(_configuration["GoShip:BaseUrl"]);
+        var baseUrl = _configuration["GoShip:BaseUrl"];
+        if (string.IsNullOrEmpty(baseUrl))
+        {
+            throw new InvalidOperationException("GoShip:BaseUrl is not configured in application settings.");
+        }
+        _httpClient.BaseAddress = new Uri(baseUrl);
     }
     public async Task<string> GetValidationTokenAsync()
     {
         using var operation = _telemetryClient.StartOperation<DependencyTelemetry>("GetValidToken");
         try
         {
-            string accessToken = null;
-            string expiryTimeString = null;
+            string? accessToken = null;
+            string? expiryTimeString = null;
             bool cacheOperationSucceeded = true;
 
             // Add retry policy for Redis operations
@@ -182,7 +187,7 @@ public class ShippingService : IShippingService
                 accessToken = newToken;
             }
 
-            return accessToken;
+            return accessToken ?? throw new InvalidOperationException("Failed to obtain a valid GoShip access token");
         }
         catch (Exception ex)
         {
@@ -351,6 +356,11 @@ public class ShippingService : IShippingService
             throw new Exception("Invalid shipping cost response from GoShip API");
         }
 
+        if (shippingCostResult.data == null)
+        {
+            throw new Exception("Shipping cost data is missing in the GoShip API response");
+        }
+
         return shippingCostResult.data;
     }
 
@@ -373,6 +383,10 @@ public class ShippingService : IShippingService
         {
             throw new Exception("Invalid districts response from GoShip API");
         }
+        if (districtsResult.data == null)
+        {
+            throw new Exception("Districts data is missing in the GoShip API response");
+        }
         return districtsResult.data;
     }
 
@@ -393,6 +407,10 @@ public class ShippingService : IShippingService
         if (citiesResult == null)
         {
             throw new Exception("Invalid cities response from GoShip API");
+        }
+        if (citiesResult.data == null)
+        {
+            throw new Exception("Cities data is missing in the GoShip API response");
         }
         return citiesResult.data;
     }
@@ -482,6 +500,10 @@ public class ShippingService : IShippingService
         if (wardsResult == null)
         {
             throw new Exception("Invalid wards response from GoShip API");
+        }
+        if (wardsResult.data == null)
+        {
+            throw new Exception("Wards data is missing in the GoShip API response");
         }
         return wardsResult.data;
     }

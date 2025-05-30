@@ -7,7 +7,7 @@ namespace DearHome_Backend.Repositories.Implementations;
 
 public class AttributeRepository : BaseRepository<Models.Attribute>, IAttributeRepository
 {
-    private readonly DearHomeContext _context;
+    private new readonly DearHomeContext _context;
     public AttributeRepository(DearHomeContext context) : base(context)
     {
         _context = context;

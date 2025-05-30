@@ -350,4 +350,9 @@ public class UserService : IUserService
         }
         
     }
+
+    public Task<int> GetTotalCustomersCountAsync()
+    {
+        return _userRepository.GetTotalCustomersCountAsync();
+    }
 }

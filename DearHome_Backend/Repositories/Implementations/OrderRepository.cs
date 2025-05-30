@@ -2,6 +2,7 @@ using System;
 using DearHome_Backend.Constants;
 using DearHome_Backend.Data;
 using DearHome_Backend.DTOs.PaginationDtos;
+using DearHome_Backend.DTOs.StatsDtos;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -199,6 +200,39 @@ public class OrderRepository : BaseRepository<Order>, IOrderRepository
             .Where(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate)
             .GroupBy(o => o.CreatedAt.Year)
             .Select(g => new KeyValuePair<string, decimal>(g.Key.ToString(), g.Count()))
+            .ToListAsync();
+    }
+
+    public Task<int> GetTotalOrdersCountAsync()
+    {
+        return _context.Orders.CountAsync();
+    }
+
+    public Task<decimal> GetTotalSalesAsync()
+    {
+        return _context.Orders
+            .Where(o => o.Status == OrderStatus.Completed)
+            .SumAsync(o => o.FinalPrice);
+    }
+
+    public Task<KeyValuePair<OrderStatus, decimal>> GetOrderStatusPercentageAsync(OrderStatus status, DateTime startDate, DateTime endDate)
+    {
+        return _context.Orders
+            .Where(o => o.Status == status && o.CreatedAt >= startDate && o.CreatedAt <= endDate)
+            .GroupBy(o => o.Status)
+            .Select(g => new KeyValuePair<OrderStatus, decimal>(g.Key, (decimal)g.Count() / _context.Orders.Count(o => o.CreatedAt >= startDate && o.CreatedAt <= endDate) * 100))
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<IEnumerable<OrderStatusPercentage>> GetOrderStatusPercentageAsync()
+    {
+        return await _context.Orders
+            .GroupBy(o => o.Status)
+            .Select(g => new OrderStatusPercentage
+            {
+                Status = g.Key,
+                Percentage = (decimal)g.Count() / _context.Orders.Count() * 100
+            })
             .ToListAsync();
     }
 }
