@@ -1,6 +1,9 @@
+using System.Text;
+using System.Text.Json;
 using AutoMapper;
 using DearHome_Backend.DTOs.ProductDtos;
 using DearHome_Backend.Models;
+using DearHome_Backend.Services.Implementations;
 using DearHome_Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,7 +31,7 @@ namespace DearHome_Backend.Controllers
         }
 
         [HttpGet("top-sales")]
-        public async Task<IActionResult> GetTopSalesProducts([FromQuery]int count)
+        public async Task<IActionResult> GetTopSalesProducts([FromQuery] int count)
         {
             var products = await _productService.GetTopSalesProductsAsync(count);
             var productDtos = _mapper.Map<IEnumerable<ProductDto>>(products);

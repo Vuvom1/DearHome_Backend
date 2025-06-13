@@ -56,7 +56,7 @@ public class BaseService <T> : IBaseService<T> where T : BaseEntity
         return entity;
     }
 
-    public async Task DeleteAsync(Guid id)
+    public virtual async Task DeleteAsync(Guid id)
     {
         var entity = await _repository.GetByIdAsync(id);
         if (entity == null)

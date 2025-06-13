@@ -9,6 +9,7 @@ public interface ICategoryRepository : IBaseRepository<Category>
     Task<Category> GetCategoryByName(string name);
     Task<IEnumerable<Category>> GetAllParentCategories();
     Task<Category> GetCategoryBySlug(string slug);
+    Task<string> GetCategoryNameByIdAsync(Guid id);
     Task<List<Category>> GetAllWithParentAndAttributes();
     Task<List<Category>> GetCategoriesByParentId(Guid parentId);
     Task<List<Category>> GetAllWithAttributesAndAttributeValues();

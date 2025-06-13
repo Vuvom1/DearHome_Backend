@@ -105,4 +105,12 @@ public class CategoryRepository : BaseRepository<Category>, ICategoryRepository
             })
             .ToListAsync();
     }
+
+    public async Task<string> GetCategoryNameByIdAsync(Guid id)
+    {
+    return await _context.Categories
+            .Where(c => c.Id == id)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync() ?? throw new InvalidOperationException($"Category with ID '{id}' not found.");
+    }
 }

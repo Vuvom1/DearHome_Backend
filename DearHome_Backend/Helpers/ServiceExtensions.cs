@@ -29,6 +29,7 @@ public static class ServiceExtensions
         services.AddScoped<IPromotionService, PromotionService>();
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IStatisticService, StatisticService>();
+        services.AddSingleton<NatsService>();
     }
 
     public static void AddScopedRepositories(this IServiceCollection services)

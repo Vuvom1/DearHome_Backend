@@ -2,6 +2,7 @@ using System;
 using DearHome_Backend.Data;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace DearHome_Backend.Repositories.Implementations;
 
@@ -11,5 +12,13 @@ public class VariantAttributeRepository : BaseRepository<VariantAttribute>, IVar
     public VariantAttributeRepository(DearHomeContext context) : base(context)
     {
         _context = context;
+    }
+
+    public async Task<IEnumerable<VariantAttribute>> GetWithAttributeValuesByIdAsync(IEnumerable<Guid> ids)
+    {
+        return await _context.VariantAttributes
+            .Include(va => va.AttributeValue)
+            .Where(va => ids.Contains(va.Id))
+            .ToListAsync();
     }
 }
