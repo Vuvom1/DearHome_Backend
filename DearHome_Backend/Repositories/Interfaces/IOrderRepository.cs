@@ -8,8 +8,6 @@ namespace DearHome_Backend.Repositories.Interfaces;
 
 public interface IOrderRepository : IBaseRepository<Order>
 {
-    Task<IEnumerable<Order>> GetAllAsync(int offSet, int limit);
-    Task<PaginatedResponse<IEnumerable<Order>>> GetAllAsync(int pageNumber, int pageSize, string? searchString = null);
     Task<int> GetTotalOrdersCountAsync();
     Task<decimal> GetTotalSalesAsync();
     Task<IEnumerable<OrderStatusPercentage>> GetOrderStatusPercentageAsync();

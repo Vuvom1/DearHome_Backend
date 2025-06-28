@@ -5,6 +5,7 @@ using DearHome_Backend.Services.Inplementations;
 using DearHome_Backend.Services.Interfaces;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DearHome_Backend.Constants;
 
 namespace DearHome_Backend.Services.Implementations;
 
@@ -51,19 +52,31 @@ public class VariantService : BaseService<Variant>, IVariantService
 
     public override async Task<Variant> UpdateAsync(Variant entity)
     {
-        var existingVariant = await _variantRepository.GetByIdWithVariantAttributesAsync(entity.Id);
+        await PublishVariantUpdatedEventAsync(entity);
 
-        //Remove all existing attribute values
-        if (existingVariant?.VariantAttributes != null)
+        // Add variate attributes if they are not already present
+        if (entity.VariantAttributes != null && entity.VariantAttributes.Any())
         {
-            var existingVariantAttributeIds = existingVariant.VariantAttributes.Select(v => v.Id).ToList();
-            foreach (var attributeValueId in existingVariantAttributeIds)
+            foreach (var variantAttribute in entity.VariantAttributes)
             {
-                await _variantAttributeRepository.DeleteAsync(attributeValueId);
+                if (variantAttribute.Id == Guid.Empty)
+                {
+                    // If the attribute does not have an ID, it is a new attribute
+                    variantAttribute.VariantId = entity.Id; // Set the VariantId for the new attribute
+                    await _variantAttributeRepository.AddAsync(variantAttribute);
+                }
+                else
+                {
+                    // If the attribute already exists, update it
+                    var existingAttribute = await _variantAttributeRepository.GetByIdAsync(variantAttribute.Id);
+                    if (existingAttribute != null)
+                    {
+                        existingAttribute.AttributeValueId = variantAttribute.AttributeValueId;
+                        await _variantAttributeRepository.UpdateAsync(existingAttribute);
+                    }
+                }
             }
         }
-
-        await PublishVariantUpdatedEventAsync(entity);
 
         return await base.UpdateAsync(entity);
     }
@@ -74,22 +87,33 @@ public class VariantService : BaseService<Variant>, IVariantService
 
         PublishVariantDeletedEvent(id);
     }
-
-    private async Task PublishVariantCreatedEventAsync(Variant createdVariant)
+    
+    private void PublishEvent(string subject, object message)
     {
-        var product = await _productRepository.GetByIdWithAttributeValuesAndVariantsAsync(createdVariant.ProductId);
+        var jsonMessage = JsonSerializer.Serialize(message, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        });
+        _natsService.Publish(subject, jsonMessage);
+    }
 
-        var attributes = await _variantAttributeRepository.GetWithAttributeValuesByIdAsync(createdVariant.VariantAttributes?.Select(attr => attr.Id) ?? Enumerable.Empty<Guid>());
-        createdVariant.VariantAttributes = attributes.Select(attr => new VariantAttribute
+    private async Task<object> CreateVariantEventData(Variant variant)
+    {
+        var product = await _productRepository.GetByIdWithAttributeValuesAndVariantsAsync(variant.ProductId);
+
+        var attributes = await _variantAttributeRepository.GetWithAttributeValuesByIdAsync(variant.VariantAttributes?.Select(attr => attr.Id) ?? Enumerable.Empty<Guid>());
+        variant.VariantAttributes = attributes.Select(attr => new VariantAttribute
         {
             Id = attr.Id,
             AttributeValueId = attr.AttributeValueId,
-            VariantId = createdVariant.Id,
+            VariantId = variant.Id,
             AttributeValue = attr.AttributeValue
         }).ToList();
 
-        var variantData = new{
-            id = createdVariant.Id,
+        return new
+        {
+            id = variant.Id,
             product = new
             {
                 id = product?.Id,
@@ -98,86 +122,36 @@ public class VariantService : BaseService<Variant>, IVariantService
                 category = product?.Category?.Name,
                 placement = product?.Placement?.Name,
             },
-            attributes = createdVariant.VariantAttributes?.Select(attr => new
+            attributes = variant.VariantAttributes?.Select(attr => new
             {
                 id = attr.AttributeValueId,
                 value = attr.AttributeValue?.Value
             }),
-            sku = createdVariant.Sku,
-            price_adjustment = createdVariant.PriceAdjustment,
-            stock_quantity = createdVariant.Stock,
-            is_active = createdVariant.IsActive,
-            created_at = createdVariant.CreatedAt
+            sku = variant.Sku,
+            price_adjustment = variant.PriceAdjustment,
+            stock_quantity = variant.Stock,
+            is_active = variant.IsActive,
+            created_at = variant.CreatedAt
         };
+    }
 
-        var publishedData = new
-        {
-            operation = "create",
-            variant = variantData
-        };
+    private async Task PublishVariantCreatedEventAsync(Variant createdVariant)
+    {
+        var variantData = await CreateVariantEventData(createdVariant);
 
-        string jsonData = JsonSerializer.Serialize(publishedData, _jsonOptions);
-        _natsService.Publish("variant.sync", jsonData);
+        _natsService.Publish(NatsConstants.VariantCreated, variantData);
     }
 
     private async Task PublishVariantUpdatedEventAsync(Variant updatedVariant)
     {
-        var product = await _productRepository.GetByIdWithAttributeValuesAndVariantsAsync(updatedVariant.ProductId);
+        var variantData = await CreateVariantEventData(updatedVariant);
 
-        var attributes = await _variantAttributeRepository.GetWithAttributeValuesByIdAsync(updatedVariant.VariantAttributes?.Select(attr => attr.Id) ?? Enumerable.Empty<Guid>());
-        updatedVariant.VariantAttributes = attributes.Select(attr => new VariantAttribute
-        {
-            Id = attr.Id,
-            AttributeValueId = attr.AttributeValueId,
-            VariantId = updatedVariant.Id,
-            AttributeValue = attr.AttributeValue
-        }).ToList();
-
-        var variantData = new{
-            id = updatedVariant.Id,
-            product = new
-            {
-                id = product?.Id,
-                name = product?.Name,
-                description = product?.Description,
-                category = product?.Category?.Name,
-                placement = product?.Placement?.Name,
-            },
-            attributes = updatedVariant.VariantAttributes?.Select(attr => new
-            {
-                id = attr.AttributeValueId,
-                value = attr.AttributeValue?.Value
-            }),
-            sku = updatedVariant.Sku,
-            price_adjustment = updatedVariant.PriceAdjustment,
-            stock_quantity = updatedVariant.Stock,
-            is_active = updatedVariant.IsActive,
-            created_at = updatedVariant.CreatedAt
-        };
-
-        var publishedData = new
-        {
-            operation = "update",
-            variant = variantData
-        };
-
-        string jsonData = JsonSerializer.Serialize(publishedData, _jsonOptions);
-        _natsService.Publish("variant.sync", jsonData);
+        _natsService.Publish(NatsConstants.VariantUpdated, variantData);
     }
 
     private void PublishVariantDeletedEvent(Guid variantId)
     {
-        var publishedData = new
-        {
-            operation = "delete",
-            variant = new
-            {
-                id = variantId
-            }
-        };
-
-        string jsonData = JsonSerializer.Serialize(publishedData, _jsonOptions);
-        _natsService.Publish("variant.sync", jsonData);
+        _natsService.Publish(NatsConstants.VariantDeleted, new { id = variantId });
     }
 
 

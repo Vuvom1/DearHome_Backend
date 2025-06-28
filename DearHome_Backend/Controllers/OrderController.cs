@@ -25,10 +25,10 @@ namespace DearHome_Backend.Controllers
         }
 
         [HttpGet] 
-        public async Task<IActionResult> GetAllOrders([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchString = null)
+        public async Task<IActionResult> GetAllOrders([FromQuery] int offSet = 0, [FromQuery] int limit = 10, [FromQuery] string? searchString = null, [FromQuery] string? filter = null, [FromQuery] string? sortBy = null, [FromQuery] bool isDescending = false)
         {
-            var orders = await _orderService.GetAllAsync(pageNumber, pageSize, searchString);
-            
+            var orders = await _orderService.GetAllAsync(offSet, limit, searchString, filter, sortBy, isDescending);
+
             return Ok(orders);
         }
 

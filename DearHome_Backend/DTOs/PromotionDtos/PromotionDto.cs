@@ -15,9 +15,8 @@ public class PromotionDto
     public DateTime EndDate { get; set; }
     public bool IsActive { get; set; } = true;
     public string? Description { get; set; }
-    public PromotionType Type { get; set; }
     public CustomerLevels CustomerLevel { get; set; } // 0: Bronze, 1: Silver, 2: Gold, 3: Platinum
-    public int Ussage { get; set; } // Usage limit for the promotion
+    public int Usage { get; set; } // Usage limit for the promotion
     public virtual ICollection<ProductDto>? Products { get; set; } // List of products that this promotion applies to
     public virtual ICollection<OrderDto>? Orders { get; set; } // Orders that used t
 }

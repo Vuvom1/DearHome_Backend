@@ -1,6 +1,7 @@
 using System;
 using DearHome_Backend.Constants;
 using DearHome_Backend.Data;
+using DearHome_Backend.DTOs.PaginationDtos;
 using DearHome_Backend.DTOs.StatsDtos;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
@@ -17,26 +18,64 @@ public class PromotionRepository : BaseRepository<Promotion>, IPromotionReposito
         _context = context;
     }
 
-    public async Task<IEnumerable<Promotion>> GetAllAsync(int offSet, int limit, string? search)
+    public override async Task<PaginatedResult<Promotion>> GetAllAsync(int offSet, int limit, string? search)
     {
-        if (!string.IsNullOrEmpty(search))
+        var query = _context.Promotions.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            return await _context.Promotions
-                .Where(p => p.Name.Contains(search) || p.Description!.Contains(search))
+            query = query.Where(p => p.Name.Contains(search));
+        }
+
+        return new PaginatedResult<Promotion>
+        {
+            Data = await query
                 .Include(p => p.Products)
                 .Skip(offSet)
                 .Take(limit)
-                .ToListAsync();
+                .ToListAsync(),
+            PageNumber = offSet / limit + 1,
+            PageSize = limit,
+            TotalRecords = await query.CountAsync()
+        };
+    }
+
+    public override async Task<PaginatedResult<Promotion>> GetAllAsync(int offSet, int limit, string? search = null, string? filter = null, string? sortBy = null, bool isDescending = false)
+    {
+        var query = _context.Promotions.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(p => p.Name.Contains(search));
         }
 
-        // If no search term is provided, return all promotions
-        // with pagination
-        // and include related products
-        return await _context.Promotions
-            .Include(p => p.Products)
-            .Skip(offSet)
-            .Take(limit)
-            .ToListAsync();
+        if (!string.IsNullOrWhiteSpace(filter))
+        {
+            query = filter switch
+            {
+                "active" => query.Where(p => p.StartDate <= DateTime.Now && p.EndDate >= DateTime.Now),
+                "upcoming" => query.Where(p => p.StartDate > DateTime.Now),
+                "expired" => query.Where(p => p.EndDate < DateTime.Now),
+                _ => query
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            query = isDescending ? query.OrderByDescending(p => EF.Property<object>(p, sortBy)) : query.OrderBy(p => EF.Property<object>(p, sortBy));
+        }
+
+        return new PaginatedResult<Promotion>
+        {
+            Data = await query
+                .Include(p => p.Products)
+                .Skip(offSet)
+                .Take(limit)
+                .ToListAsync(),
+            PageNumber = offSet / limit + 1,
+            PageSize = limit,
+            TotalRecords = await query.CountAsync()
+        };
     }
 
     public override async Task<Promotion?> GetByIdAsync(object id)
@@ -45,7 +84,7 @@ public class PromotionRepository : BaseRepository<Promotion>, IPromotionReposito
             .Include(p => p.Products)
             .FirstOrDefaultAsync(p => p.Id == (Guid)id);
 
-        return promotion;     
+        return promotion;
     }
 
     public override async Task AddAsync(Promotion entity)
@@ -73,7 +112,7 @@ public class PromotionRepository : BaseRepository<Promotion>, IPromotionReposito
     {
         //Retrieve the promotions usable by the user and current date
         var usablePromotions = await _context.Promotions
-            .Where(p => p.CustomerLevel == customerLevel && p.Type == PromotionType.Order).ToListAsync();
+            .Where(p => p.CustomerLevel == customerLevel).ToListAsync();
 
         return usablePromotions;
     }

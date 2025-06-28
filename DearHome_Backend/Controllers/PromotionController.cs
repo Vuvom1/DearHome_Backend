@@ -21,11 +21,10 @@ namespace DearHome_Backend.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllPromotions([FromQuery] int offSet, [FromQuery] int limit, [FromQuery] string? search)
+        public async Task<IActionResult> GetAllPromotions([FromQuery] int offSet=0, [FromQuery] int limit=10, [FromQuery] string? search=null, [FromQuery] string? filter=null, [FromQuery] string? sortBy=null, [FromQuery] bool isDescending=false)
         {
-            var promotions = await _promotionService.GetAllAsync(offSet, limit, search);
-            var promotionDtos = _mapper.Map<IEnumerable<PromotionDto>>(promotions);
-            return Ok(promotionDtos);
+            var promotions = await _promotionService.GetAllAsync(offSet, limit, search, filter, sortBy, isDescending);
+            return Ok(promotions);
         }
 
         [HttpGet("{id}")]

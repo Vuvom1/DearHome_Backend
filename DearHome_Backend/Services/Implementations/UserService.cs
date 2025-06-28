@@ -11,6 +11,7 @@ using DearHome_Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Google.Apis.Auth;
+using DearHome_Backend.DTOs.UserDtos;
 
 namespace DearHome_Backend.Services.Inplementations;
 
@@ -137,17 +138,6 @@ public class UserService : IUserService
             var token = GenerateToken(user);
             return token;
         }
-    }
-
-    private class GoogleUserInfo
-    {
-        public required string Email { get; set; }
-        public required string Name { get; set; }
-        public string? GivenName { get; set; }
-        public string? FamilyName { get; set; }
-        public string? Picture { get; set; }
-        public bool VerifiedEmail { get; set; }
-        public string? Hd { get; set; }
     }
 
     public async Task<User> RegisterAsync(User user, string password, string verificationCode)

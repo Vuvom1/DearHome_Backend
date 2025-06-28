@@ -17,7 +17,7 @@ public class ReviewRepository : BaseRepository<Review>, IReviewRepository
         _context = context;
     }
 
-    public async Task<PaginatedResponse<IEnumerable<Review>>> GetByProductIdAsync(Guid productId, int pageNumber, int pageSize, string sortBy, bool isDescending)
+    public async Task<PaginatedResult<Review>> GetByProductIdAsync(Guid productId, int pageNumber, int pageSize, string sortBy, bool isDescending)
     {
         var query = _context.Reviews
             .Where(r => r.OrderDetail!.Variant!.ProductId == productId)
@@ -45,7 +45,7 @@ public class ReviewRepository : BaseRepository<Review>, IReviewRepository
             .Take(pageSize)
             .ToListAsync();
 
-        var paginatedResponse = new PaginatedResponse<IEnumerable<Review>>(
+        var paginatedResponse = new PaginatedResult<Review>(
             reviews,
             pageNumber,
             pageSize,

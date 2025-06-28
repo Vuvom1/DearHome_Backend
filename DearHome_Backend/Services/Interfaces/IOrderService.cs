@@ -9,7 +9,6 @@ namespace DearHome_Backend.Services.Interfaces;
 
 public interface IOrderService : IBaseService<Order>
 {
-    Task<PaginatedResponse<IEnumerable<Order>>> GetAllAsync(int pageNumber, int pageSize, string? searchString = null);
     Task<int> GetTotalOrdersCountAsync();
     Task<IEnumerable<Order>> GetOrdersByUserIdAsync(Guid userId, int offSet, int limit);
     Task<IEnumerable<Order>> GetOrdersByUserIdAndStatusAsync(Guid userId, OrderStatus status, int offSet, int limit);

@@ -22,7 +22,7 @@ public class ReviewService : BaseService<Review>, IReviewService
         return reviews.Where(review => review != null)!;
     }
 
-    public async Task<PaginatedResponse< IEnumerable<Review>>> GetByProductIdAsync(Guid productId, int page, int pageSize, string? sortBy, bool isDescending)
+    public async Task<PaginatedResult<Review>> GetByProductIdAsync(Guid productId, int page, int pageSize, string? sortBy, bool isDescending)
     {
         return await _reviewRepository.GetByProductIdAsync(productId, page, pageSize, sortBy ?? "createdAt", isDescending);
     }

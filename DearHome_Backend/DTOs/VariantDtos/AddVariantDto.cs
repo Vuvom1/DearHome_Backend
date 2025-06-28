@@ -6,6 +6,7 @@ namespace DearHome_Backend.DTOs.VariantDtos;
 public class AddVariantDto
 {
     public required List<string> ImageUrls { get; set; } = new List<string>();
+    public string? ModelUrl { get; set; }
     public required decimal PriceAdjustment { get; set; } = 0;
     public bool IsActive { get; set; } = true; 
     public required string Sku { get; set; }

@@ -12,8 +12,7 @@ public class AddPromotionDto
     public DateTime EndDate { get; set; }
     public bool IsActive { get; set; } = true;
     public string? Description { get; set; }
-    public PromotionType Type { get; set; }
     public CustomerLevels CustomerLevel { get; set; } // 0: Bronze, 1: Silver, 2: Gold, 3: Platinum
-    public int Ussage { get; set; } // Usage limit for the promotion
+    public int Usage { get; set; } // Usage limit for the promotion
     public ICollection<Guid>? ProductIds { get; set; } // List of product IDs that this promotion applies to
 }

@@ -34,18 +34,93 @@ public class OrderRepository : BaseRepository<Order>, IOrderRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Order>> GetAllAsync(int offSet, int limit)
+    public override async Task<PaginatedResult<Order>> GetAllAsync(int offSet, int limit, string? search = null)
     {
-        return await _context.Orders
-            .Include(o => o.OrderDetails!)
+        IQueryable<Order> query = _context.Orders;
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(o => (o.User != null && o.User.Name != null && o.User.Name.Contains(search)) || 
+                                     (o.User != null && o.User.Email != null && o.User.Email.Contains(search)));
+        }
+
+        query = query.Include(o => o.OrderDetails!)
                 .ThenInclude(od => od.Variant)
-                .ThenInclude(v => v!.Product)
-                .ThenInclude(p => p!.Category)
-            .Include(o => o.User)
-            .Include(o => o.Address)
+            .Include(o => o.User);
+
+        var totalRecords = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalRecords / limit);
+
+        var orders = await query
             .Skip(offSet)
             .Take(limit)
             .ToListAsync();
+
+        return new PaginatedResult<Order>(orders, offSet / limit + 1, limit, totalRecords);
+    }
+    
+
+    public override async Task<PaginatedResult<Order>> GetAllAsync(int offSet, int limit, string? search = null, string? filter = null, string? sortBy = null, bool isDescending = false)
+    {
+        IQueryable<Order> query = _context.Orders;
+
+        if (!string.IsNullOrEmpty(search))
+        {
+            query = query.Where(o => (o.User != null && o.User.Name != null && o.User.Name.Contains(search)) || 
+                                     (o.User != null && o.User.Email != null && o.User.Email.Contains(search)));
+        }
+
+        if (!string.IsNullOrEmpty(filter))
+        {
+            query = filter switch
+            {
+                "placed" => query.Where(o => o.Status == OrderStatus.Placed),
+                "waitForPayment" => query.Where(o => o.Status == OrderStatus.WaitForPayment),
+                "processing" => query.Where(o => o.Status == OrderStatus.Processing),
+                "shipping" => query.Where(o => o.Status == OrderStatus.Shipping),
+                "completed" => query.Where(o => o.Status == OrderStatus.Completed),
+                "delivered" => query.Where(o => o.Status == OrderStatus.Delivered),
+                "cancelled" => query.Where(o => o.Status == OrderStatus.Cancelled),
+                _ => query
+            };
+        }
+
+        // Apply sorting before includes to avoid EF translation issues
+        if (!string.IsNullOrEmpty(sortBy))
+        {
+            query = sortBy.ToLower() switch
+            {
+                "id" => isDescending ? query.OrderByDescending(o => o.Id) : query.OrderBy(o => o.Id),
+                "createdat" => isDescending ? query.OrderByDescending(o => o.CreatedAt) : query.OrderBy(o => o.CreatedAt),
+                "updatedat" => isDescending ? query.OrderByDescending(o => o.UpdatedAt) : query.OrderBy(o => o.UpdatedAt),
+                "orderdate" => isDescending ? query.OrderByDescending(o => o.OrderDate) : query.OrderBy(o => o.OrderDate),
+                "status" => isDescending ? query.OrderByDescending(o => o.Status) : query.OrderBy(o => o.Status),
+                "totalprice" => isDescending ? query.OrderByDescending(o => o.TotalPrice) : query.OrderBy(o => o.TotalPrice),
+                "finalprice" => isDescending ? query.OrderByDescending(o => o.FinalPrice) : query.OrderBy(o => o.FinalPrice),
+                "discount" => isDescending ? query.OrderByDescending(o => o.Discount) : query.OrderBy(o => o.Discount),
+                "paymentordercode" => isDescending ? query.OrderByDescending(o => o.PaymentOrderCode) : query.OrderBy(o => o.PaymentOrderCode),
+                _ => query.OrderByDescending(o => o.CreatedAt) // Default sorting
+            };
+        }
+        else
+        {
+            // Default sorting if no sortBy is provided
+            query = query.OrderByDescending(o => o.CreatedAt);
+        }
+
+        query = query.Include(o => o.OrderDetails!)
+                .ThenInclude(od => od.Variant)
+            .Include(o => o.User);
+
+        var totalRecords = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalRecords / limit);
+
+        var orders = await query
+            .Skip(offSet)
+            .Take(limit)
+            .ToListAsync();
+
+        return new PaginatedResult<Order>(orders, offSet / limit + 1, limit, totalRecords);
     }
 
     public async Task UpdateOrderStatusByIdAsync(Guid orderId, OrderStatus status)
@@ -101,35 +176,6 @@ public class OrderRepository : BaseRepository<Order>, IOrderRepository
             .Skip(offSet)
             .Take(limit)
             .ToListAsync();
-    }
-
-    public async Task<PaginatedResponse<IEnumerable<Order>>> GetAllAsync(int pageNumber, int pageSize, string? searchString = null)
-    {
-
-        IQueryable<Order> query = _context.Orders;
-
-        if (!string.IsNullOrEmpty(searchString))
-        {
-            query = query.Where(o => (o.User != null && o.User.Name != null && o.User.Name.Contains(searchString)) || 
-                                     (o.User != null && o.User.Email != null && o.User.Email.Contains(searchString)));
-        }
-
-        query = query.Include(o => o.OrderDetails!)
-                .ThenInclude(od => od.Variant)
-                .ThenInclude(v => v!.Product)
-                .ThenInclude(p => p!.Category)
-            .Include(o => o.User)
-            .Include(o => o.Address);
-
-        var totalRecords = await query.CountAsync();
-        var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
-
-        var orders = await query
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        return new PaginatedResponse<IEnumerable<Order>>(orders, pageNumber, pageSize, totalRecords);
     }
 
     public override async Task<Order?> GetByIdAsync(object id)

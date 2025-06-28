@@ -11,5 +11,5 @@ public class ProductReviewsDto
     public decimal AverageRating { get; set; }
     public int TotalReviews { get; set; }
     public Dictionary<decimal, int> RatingCounts { get; set; } = new Dictionary<decimal, int>();
-    public  PaginatedResponse<IEnumerable<Review>> Reviews { get; set; } = new PaginatedResponse<IEnumerable<Review>>();
+    public  PaginatedResult<Review> Reviews { get; set; } = new PaginatedResult<Review>();
 }

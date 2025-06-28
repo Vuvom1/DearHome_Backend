@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using DearHome_Backend.DTOs.PaginationDtos;
 using DearHome_Backend.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,54 @@ namespace DearHome_Backend.Repositories.Implementations
         {
             return await _context.Set<T>().ToListAsync();
         }
+
+        public virtual async Task<PaginatedResult<T>> GetAllAsync(int offSet, int limit, string? search = null)
+        {
+            var query = _context.Set<T>().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                // Assuming T has a property called "Name" for search purposes
+                query = query.Where(e => EF.Property<string>(e, "Name").Contains(search));
+            }
+
+            return new PaginatedResult<T>
+            {
+                Data = await query.Skip(offSet).Take(limit).ToListAsync(),
+                PageNumber = offSet / limit + 1,
+                PageSize = limit,
+                TotalRecords = await query.CountAsync()
+            };
+        }
+
+        public virtual async Task<PaginatedResult<T>> GetAllAsync(int offSet, int limit, string? search = null, string? filter = null, string? sortBy = null, bool isDescending = false)
+        {
+            var query = _context.Set<T>().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(e => EF.Property<string>(e, "Name").Contains(search));
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter))
+            {
+                query = query.Where(e => EF.Property<string>(e, filter) != null);
+            }
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                query = isDescending ? query.OrderByDescending(e => EF.Property<object>(e, sortBy)) : query.OrderBy(e => EF.Property<object>(e, sortBy));
+            }
+
+            return new PaginatedResult<T>
+            {
+                Data = await query.Skip(offSet).Take(limit).ToListAsync(),
+                PageNumber = offSet / limit + 1,
+                PageSize = limit,
+                TotalRecords = await query.CountAsync()
+            };
+        }
+        
 
         public virtual async Task<T?> GetByIdAsync(object id)
         {

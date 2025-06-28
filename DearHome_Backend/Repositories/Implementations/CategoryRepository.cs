@@ -83,18 +83,19 @@ public class CategoryRepository : BaseRepository<Category>, ICategoryRepository
 
     public async Task<IEnumerable<CategoryWithStockAndPercentage>> GetCategoriesWithTotalStockAndPercentageAsync()
     {
-    return await _context.Categories
+        return await _context.Categories
             .Where(c => c.ParentCategoryId == null)
-            .Include(c => c.Products!)
-                .ThenInclude(ca => ca.Variants!)
-            .Include(c => c.SubCategories)
-            
+            .Include(c => c.SubCategories!)
+                .ThenInclude(sc => sc.Products!)
+                .ThenInclude(p => p.Variants!)
             .Select(c => new CategoryWithStockAndPercentage
             {
                 Id = c.Id,
                 CategoryName = c.Name,
-                Percentage = Math.Round(c.Products!.Sum(p => p.Variants!.Sum(v => v.Stock)) / (decimal)_context.Products.Sum(p => p.Variants!.Sum(v => v.Stock)) * 100, 2),
-                StockAmount = c.Products!.Sum(p => p.Variants!.Sum(v => v.Stock)),
+                // Parent stock amount is the sum of all subcategories' stock amounts
+                StockAmount = c.SubCategories!.Sum(sc => sc.Products!.Sum(p => p.Variants!.Sum(v => v.Stock))),
+                // Parent percentage is calculated from the total of subcategories
+                Percentage = Math.Round(c.SubCategories!.Sum(sc => sc.Products!.Sum(p => p.Variants!.Sum(v => v.Stock))) / (decimal)_context.Products.Sum(p => p.Variants!.Sum(v => v.Stock)) * 100, 2),
                 SubCategories = c.SubCategories!.Select(sc => new SubCategoryStock
                 {
                     Id = sc.Id,

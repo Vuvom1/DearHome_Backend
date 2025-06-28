@@ -42,11 +42,9 @@ public class PromotionConfiguration : IEntityTypeConfiguration<Promotion>
             .HasDefaultValue(true);
         builder.Property(p => p.Description)
             .HasMaxLength(500);
-        builder.Property(p => p.Type)
-            .IsRequired();
         builder.Property(p => p.CustomerLevel)
             .IsRequired();
-        builder.Property(p => p.Ussage)
+        builder.Property(p => p.Usage)
             .IsRequired();
             
         builder.HasMany(p => p.Products)

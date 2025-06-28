@@ -2,9 +2,9 @@ using System;
 
 namespace DearHome_Backend.DTOs.PaginationDtos;
 
-public class PaginatedResponse<T>
+public class PaginatedResult<T>
 {
-    public T Data { get; set; }
+    public List<T> Data { get; set; }
     public int PageNumber { get; set; }
     public int PageSize { get; set; }   
     public int TotalPages { get; set; }
@@ -12,9 +12,9 @@ public class PaginatedResponse<T>
     public bool HasPreviousPage => PageNumber > 0;
     public bool HasNextPage => PageNumber < TotalPages;
 
-    public PaginatedResponse(T data, int pageNumber, int pageSize, int totalRecords)
+    public PaginatedResult(List<T> data, int pageNumber, int pageSize, int totalRecords)
     {
-        this.Data = data;
+        this.Data = data ?? throw new ArgumentNullException(nameof(data));
         this.PageNumber = pageNumber;
         this.PageSize = pageSize;
         this.TotalRecords = totalRecords;
@@ -23,7 +23,7 @@ public class PaginatedResponse<T>
             : 0;
     }
 
-    public PaginatedResponse()
+    public PaginatedResult()
     {
         Data = default!;
         PageNumber = 0;

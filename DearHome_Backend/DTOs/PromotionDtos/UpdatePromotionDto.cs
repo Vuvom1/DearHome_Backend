@@ -13,8 +13,7 @@ public class UpdatePromotionDto
     public DateTime EndDate { get; set; }
     public bool IsActive { get; set; } = true;
     public string? Description { get; set; }
-    public PromotionType Type { get; set; }
     public CustomerLevels CustomerLevel { get; set; } 
-    public int Ussage { get; set; } 
+    public int Usage { get; set; } 
     public ICollection<Guid>? ProductIds { get; set; } 
 }

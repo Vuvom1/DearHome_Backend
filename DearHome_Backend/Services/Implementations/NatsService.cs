@@ -2,12 +2,15 @@ using System;
 using NATS.Client;
 using Microsoft.Extensions.Options;
 using DearHome_Backend.Config;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DearHome_Backend.Services.Implementations;
 
 public class NatsService : IDisposable
 {
     private readonly IConnection _connection;
+    private readonly JsonSerializerOptions _jsonSerializerOptions;
     private bool _disposed;
 
     public NatsService(IOptions<NatsConfig> config)
@@ -26,6 +29,15 @@ public class NatsService : IDisposable
         try
         {
             _connection = new ConnectionFactory().CreateConnection(opts);
+
+            _jsonSerializerOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                ReferenceHandler = ReferenceHandler.Preserve,
+                WriteIndented = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                MaxDepth = 64
+            };
         }
         catch (Exception ex)
         {
@@ -38,6 +50,12 @@ public class NatsService : IDisposable
     public void Publish(string subject, string message)
     {
         _connection.Publish(subject, System.Text.Encoding.UTF8.GetBytes(message));
+    }
+
+    public void Publish<T>(string subject, T data)
+    {
+        var jsonMessage = JsonSerializer.Serialize(data, _jsonSerializerOptions);
+        _connection.Publish(subject, System.Text.Encoding.UTF8.GetBytes(jsonMessage));
     }
 
     public IAsyncSubscription Subscribe(string subject, EventHandler<MsgHandlerEventArgs> handler)

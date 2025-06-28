@@ -1,5 +1,6 @@
 using System;
 using DearHome_Backend.Data;
+using DearHome_Backend.DTOs.PaginationDtos;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
 using DearHome_Backend.Services.Interfaces;
@@ -29,6 +30,11 @@ public class BaseService <T> : IBaseService<T> where T : BaseEntity
     public virtual async Task<IEnumerable<T>> GetAllAsync()
     {
         return await _repository.GetAllAsync();
+    }
+
+    public virtual async Task<PaginatedResult<T>> GetAllAsync(int offSet, int limit, string? search = null)
+    {
+        return await _repository.GetAllAsync(offSet, limit, search);
     }
 
     public virtual async Task<T> CreateAsync(T entity)
@@ -66,4 +72,8 @@ public class BaseService <T> : IBaseService<T> where T : BaseEntity
         await _repository.DeleteAsync(id);
     }
 
+    public virtual async Task<PaginatedResult<T>> GetAllAsync(int offSet, int limit, string? search = null, string? filter = null, string? sortBy = null, bool isDescending = false)
+    {
+        return await _repository.GetAllAsync(offSet, limit, search, filter, sortBy, isDescending);
+    }
 }

@@ -23,11 +23,10 @@ namespace DearHome_Backend.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] int offSet = 0, [FromQuery] int limit = 10, [FromQuery] string? searchString = null, [FromQuery] string? filter = null, [FromQuery] string? sortBy = null, [FromQuery] bool isDescending = false)
         {
-            var products = await _productService.GetAllAsync();
-            var productDtos = _mapper.Map<IEnumerable<ProductDto>>(products);
-            return Ok(productDtos);
+            var products = await _productService.GetAllAsync(offSet, limit, searchString, filter, sortBy, isDescending);
+            return Ok(products);
         }
 
         [HttpGet("top-sales")]
