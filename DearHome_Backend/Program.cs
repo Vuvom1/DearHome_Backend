@@ -13,6 +13,9 @@ using System.Text.Json;
 using Microsoft.ApplicationInsights.DependencyCollector;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,10 +46,40 @@ ServiceExtensions.AddScopedServices(builder.Services);
 ServiceExtensions.AddScopedRepositories(builder.Services);
 ServiceExtensions.AddHttpClients(builder.Services, builder.Configuration);
 
-builder.Services.AddApplicationInsightsTelemetry(options => {
+builder.Services.AddApplicationInsightsTelemetry(options =>
+{
     options.ConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
     options.EnableAdaptiveSampling = true;
     options.EnableQuickPulseMetricStream = true;
+});
+
+//Configure JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new InvalidOperationException("JWT key is not configured.");
+}
+var key = Encoding.ASCII.GetBytes(jwtKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
 });
 
 // Enable dependency tracking for HttpClient

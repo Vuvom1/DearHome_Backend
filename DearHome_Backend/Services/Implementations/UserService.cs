@@ -6,14 +6,12 @@ using System.Text;
 using DearHome_Backend.Constants;
 using DearHome_Backend.Models;
 using DearHome_Backend.Repositories.Interfaces;
-using DearHome_Backend.Services.Implementations;
 using DearHome_Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using Google.Apis.Auth;
 using DearHome_Backend.DTOs.UserDtos;
 
-namespace DearHome_Backend.Services.Inplementations;
+namespace DearHome_Backend.Services.Implementations;
 
 public class UserService : IUserService
 {
@@ -217,6 +215,8 @@ public class UserService : IUserService
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key is not configured.");
+        var jwtIssuer = _configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT issuer is not configured.");
+        var jwtAudience = _configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT audience is not configured.");
         var key = Encoding.ASCII.GetBytes(jwtKey);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -228,6 +228,8 @@ public class UserService : IUserService
                 new Claim(ClaimTypes.Role, string.Join(",", _userManager.GetRolesAsync(user).Result)),
                 new Claim("imageUrl", user.ImageUrl ?? string.Empty),
             ]),
+            Issuer = jwtIssuer,
+            Audience = jwtAudience,
             Expires = DateTime.UtcNow.AddHours(10),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
@@ -344,5 +346,45 @@ public class UserService : IUserService
     public Task<int> GetTotalCustomersCountAsync()
     {
         return _userRepository.GetTotalCustomersCountAsync();
+    }
+
+    public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, string confirmNewPassword)
+    {
+        // Validate the new password
+        if (newPassword != confirmNewPassword)
+        {
+            throw new InvalidOperationException("New password and confirmation do not match.");
+        }
+
+        // Find the user by ID
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            throw new InvalidOperationException("User not found.");
+        }
+
+        // Check if the password hash is null or empty
+        if (string.IsNullOrEmpty(user.PasswordHash))
+        {
+            throw new InvalidOperationException("Cannot verify password. User has no password set.");
+        }
+
+        // Verify the current password
+        var passwordVerificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
+        if (passwordVerificationResult != PasswordVerificationResult.Success)
+        {
+            throw new InvalidOperationException("Current password is incorrect.");
+        }
+
+        // Validate the new password
+        var passwordValidationResult = await _passwordValidator.ValidateAsync(_userManager, user, newPassword);
+        if (passwordValidationResult != IdentityResult.Success)
+        {
+            throw new InvalidOperationException("New password validation failed: " + string.Join(", ", passwordValidationResult.Errors.Select(e => e.Description)));
+        }
+
+        // Change the password
+        user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
+        await _userManager.UpdateAsync(user);
     }
 }

@@ -11,4 +11,6 @@ public interface IUserRepository : IBaseRepository<User>
     Task<bool> IsUserNameExistsAsync(string userName);
     Task<bool> IsEmailExistsAsync(string email);
     Task<bool> IsPhoneNumberExistsAsync(string phoneNumber);
+    Task ChangePasswordAsync(Guid userId, string newPassword);
+    Task<string> GetUserHashPasswordAsync(Guid userId);
 }

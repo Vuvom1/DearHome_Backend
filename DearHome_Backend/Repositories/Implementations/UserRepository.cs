@@ -104,4 +104,21 @@ public class UserRepository : BaseRepository<User>, IUserRepository
         var users = await _userManager.GetUsersInRoleAsync(UserRole.User.ToString());
         return users.Count;
     }
+
+    public async Task ChangePasswordAsync(Guid userId, string newPassword)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            throw new ArgumentException($"User with ID {userId} not found.", nameof(userId));
+        }
+        user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, newPassword);
+        await _userManager.UpdateAsync(user);
+    }
+
+    public async Task<string> GetUserHashPasswordAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        return user?.PasswordHash ?? throw new InvalidOperationException($"User with ID '{userId}' does not have a password hash.");
+    }
 }
